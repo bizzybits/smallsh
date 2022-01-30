@@ -1,12 +1,13 @@
-#include<stdio.h>
-#include<string.h>
-#include<stdlib.h>
-#include<unistd.h>
-#include<sys/types.h>
-#include<sys/wait.h>
-#include<readline/readline.h>
-#include<readline/history.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 #include "main.h"
+
 
 #define MAXCOM 1000 // max number of letters to be supported
 #define MAXLIST 100 // max number of commands to be supported
@@ -33,18 +34,21 @@
 // Brewster lectures on YouTube: https://www.youtube.com/watch?v=1R9h-H2UnLs&list=PL0VYt36OaaJll8G0-0xrqaJW60I-5RXdW&index=17
 
 
-#define clear() printf("\033[H\033[J")
+ #define clear() printf("\033[H\033[J")
+
+
+
 
 int main()
 {
     char inputString[MAXCOM], *parsedArgs[MAXLIST];
     char* parsedArgsPiped[MAXLIST];
     int execFlag = 0;
- //   init_shell();
+    init_shell();
   
     while (1) {
         // print shell line
- //       printDir();
+        printDir();
         // take input
         if (takeInput(inputString))
             continue;
