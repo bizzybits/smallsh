@@ -1,5 +1,6 @@
 hello there!
 
 to run this code: 
- gcc shell.c -lreadline
-./a.out 
+
+ gcc --std=gnu99  -o movies main.c
+ ./movies
