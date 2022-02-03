@@ -4,14 +4,34 @@
 #include<unistd.h>
 #include<sys/types.h>
 #include<sys/wait.h>
-#include<readline/readline.h>
-#include<readline/history.h>
 
 #define MAXCOM 1000 // max number of letters to be supported
 #define MAXLIST 100 // max number of commands to be supported
 
+#define MAX_VAR_NUM 10
+#define PIPE_MAX_NUM 10
+#define FILE_MAX_SIZE 40
+#define MAXFILE 81
+
 // Clearing the shell using escape sequences
 #define clear() printf("\033[H\033[J")
+
+struct commandType {
+  char *command;
+  char *VarList[MAX_VAR_NUM];
+  int VarNum;
+};
+
+/* parsing information structure */
+typedef struct {
+  int   boolInfile;		       /* boolean value - infile specified */
+  int   boolOutfile;		       /* boolean value - outfile specified */
+  int   boolBackground;		       /* run the process in the background? */
+  struct commandType CommArray[PIPE_MAX_NUM];
+  int   pipeNum;
+  char  inFile[FILE_MAX_SIZE];	       /* file to be piped from */
+  char  outFile[FILE_MAX_SIZE];	       /* file to be piped into */
+} parseInfo;
 
 // Greeting shell during startup
 void init_shell()

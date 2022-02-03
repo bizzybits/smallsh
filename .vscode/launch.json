@@ -2,16 +2,37 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "(gdb) Launch",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/main",
+      "args": [],
+      "stopAtEntry": true,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+          {
+              "description": "Enable pretty-printing for gdb",
+              "text": "-enable-pretty-printing",
+              "ignoreFailures": true
+          },
+      ],
+      "preLaunchTask": "hello"
+      
+    },
+    {
       "name": "C/C++ Runner: Debug Session",
       "type": "cppdbg",
       "request": "launch",
       "args": [
         ""
       ],
-      "stopAtEntry": false,
+      "stopAtEntry": true,
       "cwd": "/nfs/stak/users/ponceel/CS-344/a3-smallsh",
       "environment": [],
-      "program": "/nfs/stak/users/ponceel/CS-344/a3-smallsh/build/Debug/outDebug",
+      "program": "/nfs/stak/users/ponceel/CS-344/a3-smallsh/main",
       "internalConsoleOptions": "openOnSessionStart",
       "MIMode": "gdb",
       "miDebuggerPath": "/bin/gdb",

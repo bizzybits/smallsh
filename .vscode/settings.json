@@ -26,12 +26,5 @@
     "**/.*/**",
     "**/.vscode",
     "**/.vscode/**"
-  ],
-  "files.associations": {
-    "main.h": "c",
-    "readline.h": "c",
-    "*.tcc": "c",
-    "string": "c",
-    "istream": "c"
-  }
+  ]
 }
