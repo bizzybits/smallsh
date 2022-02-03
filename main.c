@@ -64,5 +64,6 @@ int main()
 		if (execFlag == 2)
 			execArgsPiped(parsedArgs, parsedArgsPiped);
 	}
+	printf("hello");
 	return 0;
 }
