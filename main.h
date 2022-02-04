@@ -20,6 +20,7 @@ struct commandType {
   char *command;
   char *VarList[MAX_VAR_NUM];
   int VarNum;
+  struct command* next;
 };
 
 /* parsing information structure */
@@ -83,7 +84,7 @@ void printDir()
 }
 
 // Function where the system command is executed
-void execArgs(char** parsed)
+void executeCommands(char** parsed)
 {
 	// Forking a child
 	pid_t pid = fork();
@@ -219,6 +220,24 @@ int ownCmdHandler(char** parsed)
 }
 
 // function for finding pipe
+int parseInputFile(char* str, char** strpiped)
+{
+	int i;
+	int w = 0;
+	for (i = 0; i < 2; i++) {
+		strpiped[i] = strsep(&str, "<");
+		if (strpiped[i] == NULL)
+			break;
+	}
+
+	if (strpiped[1] == NULL)
+		return 0; // returns zero if no pipe is found.
+	else {
+		printf("< found");
+		return 1;
+	}
+}
+// function for finding pipe
 int parsePipe(char* str, char** strpiped)
 {
 	int i;
@@ -234,7 +253,6 @@ int parsePipe(char* str, char** strpiped)
 		return 1;
 	}
 }
-
 // function for parsing command words
 void parseSpace(char* str, char** parsed)
 {
@@ -255,20 +273,28 @@ int processString(char* str, char** parsed, char** parsedpipe)
 
 	char* strpiped[2];
 	int piped = 0;
+	int inputFile = 0;
+	int outputFile = 0;
+
+	//inputFile = parseInputFile(str, strpiped);
+	//outputFile = parseOutputFile(str, strpiped);
 
 	piped = parsePipe(str, strpiped);
 
-	if (piped) {
+	if (piped) 
+	{
 		parseSpace(strpiped[0], parsed);
 		parseSpace(strpiped[1], parsedpipe);
 
-	} else {
-
+	}
+	else
+	{
 		parseSpace(str, parsed);
 	}
 
 	if (ownCmdHandler(parsed))
 		return 0;
-	else
-		return 1 + piped;
+	else if (inputFile)
+		return 1 + inputFile;
+
 }

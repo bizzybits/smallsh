@@ -59,11 +59,10 @@ int main()
 
 		// execute
 		if (execFlag == 1)
-			execArgs(parsedArgs);
+			executeCommands(parsedArgs);
 
 		if (execFlag == 2)
 			execArgsPiped(parsedArgs, parsedArgsPiped);
 	}
-	printf("hello");
 	return 0;
 }
