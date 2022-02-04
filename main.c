@@ -59,7 +59,7 @@ int main()
 
 		// execute
 		if (execFlag == 1)
-			executeCommands(parsedArgs);
+			execArgs(parsedArgs);
 
 		if (execFlag == 2)
 			execArgsPiped(parsedArgs, parsedArgsPiped);

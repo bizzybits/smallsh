@@ -84,7 +84,7 @@ void printDir()
 }
 
 // Function where the system command is executed
-void executeCommands(char** parsed)
+void execArgs(char** parsed)
 {
 	// Forking a child
 	pid_t pid = fork();
@@ -219,24 +219,24 @@ int ownCmdHandler(char** parsed)
 	return 0;
 }
 
-// function for finding pipe
-int parseInputFile(char* str, char** strpiped)
-{
-	int i;
-	int w = 0;
-	for (i = 0; i < 2; i++) {
-		strpiped[i] = strsep(&str, "<");
-		if (strpiped[i] == NULL)
-			break;
-	}
+// // function for finding pipe
+// int parseInputFile(char* str, char** strpiped)
+// {
+// 	int i;
+// 	int w = 0;
+// 	for (i = 0; i < 2; i++) {
+// 		strpiped[i] = strsep(&str, "<");
+// 		if (strpiped[i] == NULL)
+// 			break;
+// 	}
 
-	if (strpiped[1] == NULL)
-		return 0; // returns zero if no pipe is found.
-	else {
-		printf("< found");
-		return 1;
-	}
-}
+// 	if (strpiped[1] == NULL)
+// 		return 0; // returns zero if no pipe is found.
+// 	else {
+// 		printf("< found");
+// 		return 1;
+// 	}
+// }
 // function for finding pipe
 int parsePipe(char* str, char** strpiped)
 {
@@ -286,15 +286,14 @@ int processString(char* str, char** parsed, char** parsedpipe)
 		parseSpace(strpiped[0], parsed);
 		parseSpace(strpiped[1], parsedpipe);
 
-	}
-	else
-	{
+	}else {
 		parseSpace(str, parsed);
 	}
 
 	if (ownCmdHandler(parsed))
 		return 0;
-	else if (inputFile)
+
+	else 
 		return 1 + inputFile;
 
 }
