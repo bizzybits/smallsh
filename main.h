@@ -120,17 +120,20 @@ if (args == 0){
 	printf("All of this is being written to the file using printf\n"); 
 	
 
-	// 0 is read end, 1 is write end
+	//0 is read end, 1 is write end
 	int pipefd[2];
 	pid_t p1, p2;
+	int status;
 
+	
+	
 	if (pipe(pipefd) < 0) {
 		printf("\nPipe could not be initialized");
 		return;
 	}
 	p1 = fork();
 	if (p1 < 0) {
-		printf("\nCould not fork");
+		printf("\nCould not fork p1");
 		return;
 	}
 
@@ -141,7 +144,7 @@ if (args == 0){
 		dup2(pipefd[1], STDOUT_FILENO);
 		close(pipefd[1]);
 
-		if (execvp(parsed[0], parsed) < 0) {
+		if (execvp(parsed[0], parsedpipe) < 0) {
 			printf("\nCould not execute command 1..");
 			exit(0);
 		}
@@ -149,8 +152,8 @@ if (args == 0){
 		// Parent executing
 		p2 = fork();
 
-		if (p2 < 0) {
-			printf("\nCould not fork");
+		if (p2 = waitpid(p2, &status, WNOHANG) == -1 ) {
+			printf("\nCould not fork p2");
 			return;
 		}
 
@@ -164,11 +167,14 @@ if (args == 0){
 				printf("\nCould not execute command 2..");
 				exit(0);
 			}
-		} else {
-			// parent executing, waiting for two children
-			wait(NULL);
-			wait(NULL);
-		}
+		 } else {
+		 	// parent executing, waiting for two children
+			 if (WIFEXITED(status))
+			 	printf("success\n");
+		 
+
+		 }
+		
 	}
  }
 
@@ -291,4 +297,19 @@ int processString(char* str, char** parsed, char** parsedpipe)
 		return 0;
 	else
 		return 1 + piped;
+}
+
+//https://stackoverflow.com/questions/13636252/c-minishell-adding-pipelines
+typedef void (*SigHandler)(int signum);
+
+static void sigchld_status(void)
+{
+    const char *handling = "Handler";
+    SigHandler sigchld = signal(SIGCHLD, SIG_IGN);
+    signal(SIGCHLD, sigchld);
+    if (sigchld == SIG_IGN)
+        handling = "Ignored";
+    else if (sigchld == SIG_DFL)
+        handling = "Default";
+    printf("SIGCHLD set to %s\n", handling);
 }
