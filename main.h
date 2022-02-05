@@ -1,9 +1,11 @@
+#define _GNU_SOURCE
 #include<stdio.h>
 #include<string.h>
 #include<stdlib.h>
 #include<unistd.h>
 #include<sys/types.h>
 #include<sys/wait.h>
+#include <fcntl.h>
 
 #define MAXCOM 1000 // max number of letters to be supported
 #define MAXLIST 100 // max number of commands to be supported
@@ -16,22 +18,6 @@
 // Clearing the shell using escape sequences
 #define clear() printf("\033[H\033[J")
 
-struct commandType {
-  char *command;
-  char *VarList[MAX_VAR_NUM];
-  int VarNum;
-};
-
-/* parsing information structure */
-typedef struct {
-  int   boolInfile;		       /* boolean value - infile specified */
-  int   boolOutfile;		       /* boolean value - outfile specified */
-  int   boolBackground;		       /* run the process in the background? */
-  struct commandType CommArray[PIPE_MAX_NUM];
-  int   pipeNum;
-  char  inFile[FILE_MAX_SIZE];	       /* file to be piped from */
-  char  outFile[FILE_MAX_SIZE];	       /* file to be piped into */
-} parseInfo;
 
 // Greeting shell during startup
 void init_shell()
@@ -106,6 +92,34 @@ void execArgs(char** parsed)
 // Function where the piped system commands is executed
 void execArgsPiped(char** parsed, char** parsedpipe)
 {
+  printf("*parsed = %s\n", *parsed);
+  printf("parsedpipe[0] = %s\n)", parsedpipe[0]);
+  int args = strlen(*parsed);
+  printf("strlen(*parsed = %d\n", args);
+
+if (args == 0){
+		printf("Usage: ./main <filename to redirect stdout to>\n");
+		exit(1);
+	}
+
+	int targetFD = open(parsedpipe[0], O_WRONLY | O_CREAT | O_TRUNC, 0640);
+	if (targetFD == -1) {
+		perror("open()");
+		exit(1);
+	}
+	// Currently printf writes to the terminal
+	printf("The file descriptor for targetFD is %d\n", targetFD);
+
+	// Use dup2 to point FD 1, i.e., standard output to targetFD
+	int result = dup2(targetFD, 1);
+	if (result == -1) {
+		perror("dup2"); 
+		exit(2); 
+	}
+	// Now whatever we write to standard out will be written to targetFD
+	printf("All of this is being written to the file using printf\n"); 
+	
+
 	// 0 is read end, 1 is write end
 	int pipefd[2];
 	pid_t p1, p2;
@@ -146,7 +160,7 @@ void execArgsPiped(char** parsed, char** parsedpipe)
 			close(pipefd[1]);
 			dup2(pipefd[0], STDIN_FILENO);
 			close(pipefd[0]);
-			if (execvp(parsedpipe[0], parsedpipe) < 0) {
+			if (execvp(parsed[0], parsedpipe) < 0) {
 				printf("\nCould not execute command 2..");
 				exit(0);
 			}
@@ -156,7 +170,7 @@ void execArgsPiped(char** parsed, char** parsedpipe)
 			wait(NULL);
 		}
 	}
-}
+ }
 
 // Help command builtin
 void openHelp()
@@ -184,12 +198,13 @@ int ownCmdHandler(char** parsed)
 
 	ListOfOwnCmds[0] = "exit";
 	ListOfOwnCmds[1] = "cd";
-	ListOfOwnCmds[2] = "help";
+	ListOfOwnCmds[2] = "status";
 	ListOfOwnCmds[3] = "hello";
 
+  //compares the first element of the parsed string (if parsed is "ls -la" then parsed[0] is only ls)
 	for (i = 0; i < NoOfOwnCmds; i++) {
 		if (strcmp(parsed[0], ListOfOwnCmds[i]) == 0) {
-			switchOwnArg = i + 1;
+			switchOwnArg = i + 1; //if it matches it will be 1, 2, 3, or 4
 			break;
 		}
 	}
@@ -198,18 +213,19 @@ int ownCmdHandler(char** parsed)
 	case 1:
 		printf("\nGoodbye\n");
 		exit(0);
-	case 2:
-		chdir(parsed[1]);
+	case 2: //need to check if there is no parse[1], 
+          // then need to set as if parse[1] = "~" or $HOME
+		chdir(parsed[1]); //parsed[0] is cd, parsed[1] is destination directory 
 		return 1;
 	case 3:
-		openHelp();
+		printf("status will print now");
 		return 1;
 	case 4:
-		username = getenv("USER");
-		printf("\nHello %s.\nMind that this is "
-			"not a place to play around."
-			"\nUse help to know more..\n",
-			username);
+		// username = getenv("USER");
+		// printf("\nHello %s.\nMind that this is "
+		// 	"not a place to play around."
+		// 	"\nUse help to know more..\n",
+		// 	username);
 		return 1;
 	default:
 		break;
@@ -223,7 +239,7 @@ int parsePipe(char* str, char** strpiped)
 {
 	int i;
 	for (i = 0; i < 2; i++) {
-		strpiped[i] = strsep(&str, "|");
+		strpiped[i] = strsep(&str, ">");
 		if (strpiped[i] == NULL)
 			break;
 	}
@@ -236,7 +252,7 @@ int parsePipe(char* str, char** strpiped)
 }
 
 // function for parsing command words
-void parseSpace(char* str, char** parsed)
+int parseSpace(char* str, char** parsed)
 {
 	int i;
 
@@ -248,6 +264,10 @@ void parseSpace(char* str, char** parsed)
 		if (strlen(parsed[i]) == 0)
 			i--;
 	}
+  if (ownCmdHandler(parsed))
+		return 0;
+	else
+		return 1;
 }
 
 int processString(char* str, char** parsed, char** parsedpipe)

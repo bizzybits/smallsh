@@ -1,0 +1,16 @@
+All of this is being written to the file using printf
+citations.txt
+main
+main.c
+main.h
+Makefile
+movies
+README.txt
+shell
+structs.txt
+stuff.txt
+unit-test.c
+
+Dir: /nfs/stak/users/ponceel/CS-344/a3-smallsh
+
+Goodbye
