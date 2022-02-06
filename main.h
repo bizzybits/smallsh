@@ -61,11 +61,9 @@ int takeInput(char* str)
 }
 
 // Function to print Current Directory.
-void printDir()
+void printPrompt()
 {
-	char cwd[1024];
-	getcwd(cwd, sizeof(cwd));
-	printf("\nDir: %s\n", cwd);
+	printf(": ");
 }
 
 // Function where the system command is executed
@@ -75,11 +73,11 @@ void execArgs(char** parsed)
 	pid_t pid = fork();
 
 	if (pid == -1) {
-		printf("\nFailed forking child..");
+		printf("\nFailed forking child..\n");
 		return;
 	} else if (pid == 0) {
 		if (execvp(parsed[0], parsed) < 0) {
-			printf("\nCould not execute command..");
+			printf("\nCould not execute command..\n");
 		}
 		exit(0);
 	} else {
@@ -230,7 +228,7 @@ void openHelp()
 // Function to execute builtin commands
 int ownCmdHandler(char** parsed)
 {
-	int NoOfOwnCmds = 4, i, switchOwnArg = 0;
+	int NoOfOwnCmds = 5, i, switchOwnArg = 0;
 	char* ListOfOwnCmds[NoOfOwnCmds];
 	char* homeDir;
 	char* newDir;
@@ -238,7 +236,8 @@ int ownCmdHandler(char** parsed)
 	ListOfOwnCmds[0] = "exit";
 	ListOfOwnCmds[1] = "cd";
 	ListOfOwnCmds[2] = "status";
-	ListOfOwnCmds[3] = "hello";
+	ListOfOwnCmds[3] = "#";
+	ListOfOwnCmds[4] = "\n\r";
 
   //compares the first element of the parsed string (if parsed is "ls -la" then parsed[0] is only ls)
 	for (i = 0; i < NoOfOwnCmds; i++) {
@@ -273,11 +272,11 @@ int ownCmdHandler(char** parsed)
 		printf("status will print now");
 		return 1;
 	case 4:
-		// username = getenv("USER");
-		// printf("\nHello %s.\nMind that this is "
-		// 	"not a place to play around."
-		// 	"\nUse help to know more..\n",
-		// 	username);
+		printf("\r");
+		return 1;
+	case 5:
+		printf("what\n");
+		sleep(3);
 		return 1;
 	default:
 		break;
@@ -325,9 +324,11 @@ int parseSpace(char* str, char** parsed)
 {
 	int i;
 
+
 	for (i = 0; i < MAXLIST; i++) {
 		parsed[i] = strsep(&str, " ");
 
+		
 		if (parsed[i] == NULL)
 			break;
 		if (strlen(parsed[i]) == 0)
