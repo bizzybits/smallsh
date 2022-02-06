@@ -60,8 +60,11 @@ int main()
 		if (execFlag == 1){
 			int childStatus;
 			childStatus = execArgs(parsedArgs);
-
-			printf("status of arg is %d\n", childStatus);
+			if (inputString == "status")
+			{
+				printf("status of arg is %d\n", childStatus);
+			}
+		//	printf("status of arg is %d\n", childStatus);
 		}
 		if (execFlag == 2)
 			execArgsPiped(parsedArgs, parsedArgsPiped);

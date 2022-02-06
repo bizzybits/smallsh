@@ -18,7 +18,11 @@
 // Clearing the shell using escape sequences
 #define clear() printf("\033[H\033[J")
 
-
+struct commandType {
+  char *command;
+  int pid;
+  int status;
+};
 
 // Greeting shell during startup
 void init_shell()
@@ -138,11 +142,8 @@ void runcmd(int fd, char ** parsedpipe){
 void execArgsPiped(char** parsed, char** parsedpipe)
 {
 
-
-//   printf("*parsed = %s\n", *parsed);
-//   printf("parsedpipe[0] = %s\n)", parsedpipe[0]);
   	int args = strlen(*parsed);
- // printf("strlen(*parsed = %d\n", args);
+
 	int saved_stdout;
 
 	if (args != 2){
@@ -253,7 +254,7 @@ int ownCmdHandler(char** parsed)
 	char* ListOfOwnCmds[NoOfOwnCmds];
 	char* homeDir;
 	char* newDir;
-	int status = 0;
+	int childStatus = 0;
 
 	ListOfOwnCmds[0] = "exit";
 	ListOfOwnCmds[1] = "cd";
@@ -279,19 +280,19 @@ int ownCmdHandler(char** parsed)
 		
 		  if (parsed[1] == NULL)
 		  {
-			printf("parsed[1] = %s\n", parsed[1]);
-			printf("going to home directory\n");
+			
 			chdir(homeDir);
 			return 1;
 		  }
 		 else 
 		  	newDir = parsed[1];
-		 	printf("going to another dir %s\n", newDir);
+		 
 		  	chdir(newDir);
 		
 			return 1;
 	case 3:
-		printf("exit status value %d\n", status);
+		
+		printf("status of arg is %d\n", childStatus);
 		return 1;
 	case 4:
 		printf("\r");
@@ -303,30 +304,28 @@ int ownCmdHandler(char** parsed)
 	return 0;
 }
 
-// // function for finding pipe
-// int parseInputFile(char* str, char** strpiped)
-// {
-// 	int i;
-// 	int w = 0;
-// 	for (i = 0; i < 2; i++) {
-// 		strpiped[i] = strsep(&str, "<");
-// 		if (strpiped[i] == NULL)
-// 			break;
-// 	}
+// function for finding background command
+int findBackground(char* str, char** strpiped)
+{
+	char *i;
 
-// 	if (strpiped[1] == NULL)
-// 		return 0; // returns zero if no pipe is found.
-// 	else {
-// 		printf("< found");
-// 		return 1;
-// 	}
-// }
+	i = strstr(str, "&");
+	if (i != NULL)
+	{
+		printf("found &");
+	}
+	else 
+		printf("no &");
+	
+	
+	
+}
 // function for finding pipe
 int parsePipe(char* str, char** strpiped)
 {
 	int i;
 	for (i = 0; i < 2; i++) {
-		strpiped[i] = strsep(&str, ">");
+		strpiped[i] = strsep(&str, "<");
 		if (strpiped[i] == NULL)
 			break;
 	}
@@ -365,11 +364,15 @@ int processString(char* str, char** parsed, char** parsedpipe)
 	int piped = 0;
 	int inputFile = 0;
 	int outputFile = 0;
-
-	//inputFile = parseInputFile(str, strpiped);
-	//outputFile = parseOutputFile(str, strpiped);
+	int background = 0;
 
 	piped = parsePipe(str, strpiped);
+	background = findBackground(str, strpiped);
+
+	if (background)
+	{
+		printf("background char found\n");
+	}
 
 	if (piped) 
 	{
@@ -403,20 +406,3 @@ static void sigchld_status(void)
     printf("SIGCHLD set to %s\n", handling);
 }
 
-int status(int pid)
-{
-	 int status;
-     
-    waitpid(pid, &status, 0);
- 
-    if ( WIFEXITED(status) )
-    {
-        int exit_status = WEXITSTATUS(status);       
-        printf("Exit status of the child was %d\n",
-                                     exit_status);
-    }
-
-	printf("no status found\n");
-	return 0;
-
-}
