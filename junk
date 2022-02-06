@@ -1,9 +1,7 @@
 All of this is being written to the file using printf
-
-Could not fork p2
-Dir: /nfs/stak/users/ponceel/CS-344/a3-smallsh
 citations.txt
 junk
+junk2
 main
 main.c
 main.h
@@ -15,5 +13,8 @@ structs.txt
 stuff.txt
 unit-test.c
 
-Could not execute command..
 Dir: /nfs/stak/users/ponceel/CS-344/a3-smallsh
+*parsed = wc
+parsedpipe[0] = junk2
+)strlen(*parsed = 2
+The file descriptor for targetFD is 4

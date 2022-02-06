@@ -25,6 +25,7 @@ int main()
   char *comment = {"#"};
   int i;
   int comp;
+  int exit_status = 0;
 
 	while (1) {
 		// print shell line

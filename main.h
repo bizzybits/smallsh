@@ -92,6 +92,8 @@ void execArgs(char** parsed)
 // Function where the piped system commands is executed
 void execArgsPiped(char** parsed, char** parsedpipe)
 {
+
+
   printf("*parsed = %s\n", *parsed);
   printf("parsedpipe[0] = %s\n)", parsedpipe[0]);
   int args = strlen(*parsed);
@@ -118,45 +120,61 @@ if (args == 0){
 	}
 	// Now whatever we write to standard out will be written to targetFD
 	printf("All of this is being written to the file using printf\n"); 
-	
 
-	//0 is read end, 1 is write end
-	int pipefd[2];
-	pid_t p1, p2;
+	runcmd(targetFD, parsed);
+}
+
+void runcmd(int fd, char ** parsed){
+
 	int status;
 
-	
-	
-	if (pipe(pipefd) < 0) {
-		printf("\nPipe could not be initialized");
-		return;
+	switch (fork()){
+		case 0: 
+			dup2(fd, 1); //fd becomes stdout
+			execvp(parsed[0], parsed);
+			perror(parsed[0]);
+			close(parsed);
+			exit(1);
+
+		default:
+			while (wait(&status) != -1);
+			break;
+
+		case -1:
+			perror("fork");
 	}
+	return;
+
+	
+}
+
+void g4g(char ** parsedpipe, char ** parsed){
+	// 0 is read end, 1 is write end
+	int pipefd[2];
+	pid_t p1, p2;
+
+
 	p1 = fork();
-	if (p1 < 0) {
-		printf("\nCould not fork p1");
-		return;
+
+	if (p1 < 0){
+		printf("could not fork p1");
 	}
 
-	if (p1 == 0) {
-		// Child 1 executing..
-		// It only needs to write at the write end
+	if (p1 == 0){
 		close(pipefd[0]);
 		dup2(pipefd[1], STDOUT_FILENO);
 		close(pipefd[1]);
-
-		if (execvp(parsed[0], parsedpipe) < 0) {
+		if (execvp(parsed[0], parsed) < 0) {
 			printf("\nCould not execute command 1..");
 			exit(0);
 		}
 	} else {
 		// Parent executing
 		p2 = fork();
-
-		if (p2 = waitpid(p2, &status, WNOHANG) == -1 ) {
-			printf("\nCould not fork p2");
+		if (p2 < 0) {
+			printf("\nCould not fork");
 			return;
 		}
-
 		// Child 2 executing..
 		// It only needs to read at the read end
 		if (p2 == 0) {
@@ -167,16 +185,53 @@ if (args == 0){
 				printf("\nCould not execute command 2..");
 				exit(0);
 			}
-		 } else {
-		 	// parent executing, waiting for two children
-			 if (WIFEXITED(status))
-			 	printf("success\n");
-		 
-
-		 }
-		
+		} else {
+			// parent executing, waiting for two children
+			wait(NULL);
+			wait(NULL);
+		}
 	}
  }
+	// // Open source file
+	// int sourceFD = open(parsedpipe[0], O_RDONLY | O_WRONLY | O_TRUNC);
+	// if (sourceFD == -1) { 
+	// 	perror("source open()"); 
+	// 	exit(1); 
+	// }
+	// // Written to terminal
+	// printf("sourceFD == %d\n", sourceFD); 
+
+	// // Redirect stdin to source file
+	// int result = dup2(sourceFD, 0);
+	// if (result == -1) { 
+	// 	perror("source dup2()"); 
+	// 	exit(2); 
+	// }
+
+	// // Open target file
+	// int targetFD = open(parsedpipe[0], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	// if (targetFD == -1) { 
+	// 	perror("target open()"); 
+	// 	exit(1); 
+	// }
+
+	// printf("targetFD == %d\n", targetFD); // Written to terminal
+  
+	// // Redirect stdout to target file
+	// result = dup2(targetFD, 1);
+	// if (result == -1) { 
+	// 	perror("target dup2()"); 
+	// 	exit(2); 
+	// }
+	// // Run the sort program using execlp.
+	// // The stdin and stdout are pointing to files
+	// execlp(parsed[0], parsed, NULL);
+	
+	
+	// return;
+
+			
+ //}
 
 // Help command builtin
 void openHelp()
@@ -312,4 +367,21 @@ static void sigchld_status(void)
     else if (sigchld == SIG_DFL)
         handling = "Default";
     printf("SIGCHLD set to %s\n", handling);
+}
+
+int status(int pid)
+{
+	 int status;
+     
+    waitpid(pid, &status, 0);
+ 
+    if ( WIFEXITED(status) )
+    {
+        int exit_status = WEXITSTATUS(status);       
+        printf("Exit status of the child was %d\n",
+                                     exit_status);
+    }
+
+	printf("no status found\n");
+	return 0;
 }
