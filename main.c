@@ -26,20 +26,30 @@ int main()
   int i;
   int comp;
   int exit_status = 0;
+  // char *return = {"\r"};
 
 	while (1) {
 		// print shell line
 		printDir();
 		// take input
-		if (takeInput(inputString))
-			continue;
+		// if (takeInput(inputString))
+		// 	continue;
+   
 		// process
+    if (takeInput(inputString))
+			continue;
+   
+   
+
     ret = strcmp(inputString, comment);
     //checks to see if input is a comment 
     if (ret == 0)
     {
       continue;
     }
+
+   
+
 
     size_t s = strlen(inputString);
 
@@ -62,22 +72,25 @@ int main()
     //   } 
     // }
     // printf("no > found\n");
+    
     execFlag = processString(inputString,
 		parsedArgs, parsedArgsPiped);
-
+    
 		// execFlag = parseSpace(inputString,
 		// parsedArgs);
 		// execflag returns zero if there is no command
 		// or it is a builtin command,
 		// 1 if it is a simple command
 		// 2 if it is including a pipe.
-
+    
 		// execute
 		if (execFlag == 1)
 			execArgs(parsedArgs);
       
 		if (execFlag == 2)
 			execArgsPiped(parsedArgs, parsedArgsPiped);
+    
+    
 	}
 	return 0;
 }
