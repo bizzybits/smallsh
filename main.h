@@ -94,21 +94,23 @@ void execArgsPiped(char** parsed, char** parsedpipe)
 {
 
 
-  printf("*parsed = %s\n", *parsed);
-  printf("parsedpipe[0] = %s\n)", parsedpipe[0]);
-  int args = strlen(*parsed);
-  printf("strlen(*parsed = %d\n", args);
+//   printf("*parsed = %s\n", *parsed);
+//   printf("parsedpipe[0] = %s\n)", parsedpipe[0]);
+  	int args = strlen(*parsed);
+ // printf("strlen(*parsed = %d\n", args);
 
-if (args == 0){
+	if (args != 2){
 		printf("Usage: ./main <filename to redirect stdout to>\n");
 		exit(1);
 	}
 
-	int targetFD = open(parsedpipe[0], O_WRONLY | O_CREAT | O_TRUNC, 0640);
+	int targetFD = open(parsedpipe[0], O_WRONLY | O_CREATE , 0640);
+	
 	if (targetFD == -1) {
 		perror("open()");
 		exit(1);
 	}
+	fcntl(targetFD, F_SETFD, FD_CLOEXEC);
 	// Currently printf writes to the terminal
 	printf("The file descriptor for targetFD is %d\n", targetFD);
 
@@ -120,29 +122,35 @@ if (args == 0){
 	}
 	// Now whatever we write to standard out will be written to targetFD
 	printf("All of this is being written to the file using printf\n"); 
-
+	
+	
 	runcmd(targetFD, parsed);
+	fflush(targetFD);
+	
+	exit(0);
+	
 }
 
 void runcmd(int fd, char ** parsed){
 
+	
 	int status;
 
 	switch (fork()){
-		case 0: 
+		case 0: //child
 			dup2(fd, 1); //fd becomes stdout
 			execvp(parsed[0], parsed);
 			perror(parsed[0]);
-			close(parsed);
 			exit(1);
 
-		default:
-			while (wait(&status) != -1);
+		default: //parent
+			while (wait(&status) != -1); //picks up dead children
 			break;
 
 		case -1:
 			perror("fork");
 	}
+
 	return;
 
 	

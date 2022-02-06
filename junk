@@ -1,5 +1,6 @@
 All of this is being written to the file using printf
 citations.txt
+jun2
 junk
 junk2
 main
@@ -14,7 +15,5 @@ stuff.txt
 unit-test.c
 
 Dir: /nfs/stak/users/ponceel/CS-344/a3-smallsh
-*parsed = wc
-parsedpipe[0] = junk2
-)strlen(*parsed = 2
-The file descriptor for targetFD is 4
+
+Goodbye
