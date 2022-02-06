@@ -18,10 +18,12 @@
 // Clearing the shell using escape sequences
 #define clear() printf("\033[H\033[J")
 
-struct commandType {
+struct child {
   char *command;
   int pid;
   int status;
+  struct child *next;
+  struct child *prev;
 };
 
 // Greeting shell during startup
@@ -71,6 +73,12 @@ void printPrompt()
 	printf(": ");
 }
 
+//Function to print last call status
+void printStatus(int childStatus)
+{
+	printf("exit valud %d\n", childStatus);
+}
+
 // Function where the system command is executed
 int execArgs(char** parsed)
 {
@@ -88,24 +96,24 @@ int execArgs(char** parsed)
 		exit(0);
 	} else {
 		// waiting for child to terminate
-		printf("Child's pid = %d\n", pid);
+	//	printf("Child's pid = %d\n", pid);
 		pid = waitpid(pid, &childStatus, 0);
-		printf("waitpid returned value %d\n", pid);
+	//	printf("waitpid returned value %d\n", pid);
 		if (WIFEXITED(childStatus))
 		{
-			printf("Child %d exited normally with status %d\n", pid, WEXITSTATUS(childStatus));
+			//printf("Child %d exited normally with status %d\n", pid, WEXITSTATUS(childStatus));
 			if (childStatus == 0)
 			{
 				return childStatus;
 			}
 			else 
 				childStatus = 1;
-				printf("exited notmrally wtih status other than 0 %d\n", childStatus);
+			//	printf("exited notmrally wtih status other than 0 %d\n", childStatus);
 				return childStatus;
 		}
 		else 
 		{
-			printf("Child %d exited abnormally due to signal %d\n", pid, WTERMSIG(childStatus));
+		//	printf("Child %d exited abnormally due to signal %d\n", pid, WTERMSIG(childStatus));
 			return childStatus;
 		}
 		wait(NULL);
@@ -248,24 +256,23 @@ void openHelp()
 }
 
 // Function to execute builtin commands
-int ownCmdHandler(char** parsed)
+int ownCmdHandler(char** parsed, int childStatus)
 {
-	int NoOfOwnCmds = 4, i, switchOwnArg = 0;
+	int NoOfOwnCmds = 3, i, switchOwnArg = 0;
 	char* ListOfOwnCmds[NoOfOwnCmds];
 	char* homeDir;
 	char* newDir;
-	int childStatus = 0;
+	// int childStatus = 0;
 
 	ListOfOwnCmds[0] = "exit";
 	ListOfOwnCmds[1] = "cd";
-	ListOfOwnCmds[2] = "status";
-	ListOfOwnCmds[3] = "#";
+	ListOfOwnCmds[2] = "#";
 
 
   //compares the first element of the parsed string (if parsed is "ls -la" then parsed[0] is only ls)
 	for (i = 0; i < NoOfOwnCmds; i++) {
 		if (strcmp(parsed[0], ListOfOwnCmds[i]) == 0) {
-			switchOwnArg = i + 1; //if it matches it will be 1, 2, 3, or 4
+			switchOwnArg = i + 1; //if it matches it will be 1, 2, or 3
 			break;
 		}
 	}
@@ -280,21 +287,14 @@ int ownCmdHandler(char** parsed)
 		
 		  if (parsed[1] == NULL)
 		  {
-			
 			chdir(homeDir);
 			return 1;
 		  }
 		 else 
 		  	newDir = parsed[1];
-		 
 		  	chdir(newDir);
-		
 			return 1;
 	case 3:
-		
-		printf("status of arg is %d\n", childStatus);
-		return 1;
-	case 4:
 		printf("\r");
 		return 1;
 	default:
@@ -337,7 +337,7 @@ int parsePipe(char* str, char** strpiped)
 	}
 }
 // function for parsing command words
-int parseSpace(char* str, char** parsed)
+int parseSpace(char* str, char** parsed, int childStatus)
 {
 	int i;
 
@@ -351,19 +351,17 @@ int parseSpace(char* str, char** parsed)
 		if (strlen(parsed[i]) == 0)
 			i--;
 	}
-  if (ownCmdHandler(parsed))
+  if (ownCmdHandler(parsed, childStatus))
 		return 0;
 	else
 		return 1;
 }
 
-int processString(char* str, char** parsed, char** parsedpipe)
+int processString(char* str, char** parsed, char** parsedpipe, int childStatus)
 {
 
 	char* strpiped[2];
 	int piped = 0;
-	int inputFile = 0;
-	int outputFile = 0;
 	int background = 0;
 
 	piped = parsePipe(str, strpiped);
@@ -372,24 +370,56 @@ int processString(char* str, char** parsed, char** parsedpipe)
 	if (background)
 	{
 		printf("background char found\n");
+		parseSpace(strpiped[0], parsed, childStatus);
 	}
 
 	if (piped) 
 	{
-		parseSpace(strpiped[0], parsed);
-		parseSpace(strpiped[1], parsedpipe);
+		parseSpace(strpiped[0], parsed, childStatus);
+		parseSpace(strpiped[1], parsedpipe, childStatus);
 
 	}else {
-		parseSpace(str, parsed);
+		parseSpace(str, parsed, childStatus);
 	}
 
-	if (ownCmdHandler(parsed))
+	if (ownCmdHandler(parsed, childStatus))
 		return 0;
 
 
 	else
 		return 1 + piped;
 }
+
+// struct child *createChild(char* str, char** parsed, char** parsedpipe)
+// {
+
+// 	struct child *currChild = malloc(sizeof(struct child));
+
+// 	currChild->command =  calloc(strlen(token) + 1, sizeof(char));
+// 	strcpy(currChild->command, parsed[0]);
+
+// 	currChild->pid = calloc(strlen(token) + 1, sizeof(int));
+// 	//get pid
+
+// 	currChild->status = calloc(strlen(token) + 1, sizeof(int));
+// 	//get exit exstatus
+
+// 	currChild->next = NULL;
+
+// 	currChild->prev = currChild;
+
+// }
+
+
+
+// struct child {
+//   char *command;
+//   int pid;
+//   int status;
+//   struct child *next;
+//   struct child *prev;
+// };
+
 
 //https://stackoverflow.com/questions/13636252/c-minishell-adding-pipelines
 typedef void (*SigHandler)(int signum);
