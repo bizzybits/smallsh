@@ -25,7 +25,7 @@ int main()
   char *empty = {"\r"};
   int i;
   int comp;
-
+  int childStatus;
 
   
   // char *return = {"\r"};
@@ -45,7 +45,7 @@ int main()
 
     
     execFlag = processString(inputString,
-		parsedArgs, parsedArgsPiped);
+		parsedArgs, parsedArgsPiped, childStatus);
     
 	
 		// execflag returns zero if there is no command
@@ -54,14 +54,18 @@ int main()
 		// 2 if it is including a pipe.
     
 		// execute
-
-
-	   
+		int num;
+		num = strcmp(inputString, "status");
+		if (num == 0)
+		{
+			printf("exit status %d\n", childStatus);
+			continue;
+		}
+	
 		if (execFlag == 1){
-			int childStatus;
+			
 			childStatus = execArgs(parsedArgs);
-
-			printf("status of arg is %d\n", childStatus);
+		
 		}
 		if (execFlag == 2)
 			execArgsPiped(parsedArgs, parsedArgsPiped);
