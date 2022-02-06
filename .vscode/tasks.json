@@ -3,7 +3,7 @@
 	"tasks": [
 		{
 			"type": "cppbuild",
-			"label": "hello",
+			"label": "./hello",
 			"command": "/bin/gcc",
 			"args": [
 				"--std=gnu99",
