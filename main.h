@@ -19,6 +19,7 @@
 #define clear() printf("\033[H\033[J")
 
 
+
 // Greeting shell during startup
 void init_shell()
 {
@@ -67,14 +68,15 @@ void printPrompt()
 }
 
 // Function where the system command is executed
-void execArgs(char** parsed)
+int execArgs(char** parsed)
 {
 	// Forking a child
+	int childStatus;
 	pid_t pid = fork();
 
 	if (pid == -1) {
 		printf("\nFailed forking child..\n");
-		return;
+		return 1;
 	} else if (pid == 0) {
 		if (execvp(parsed[0], parsed) < 0) {
 			printf("\nCould not execute command..\n");
@@ -82,8 +84,27 @@ void execArgs(char** parsed)
 		exit(0);
 	} else {
 		// waiting for child to terminate
+		printf("Child's pid = %d\n", pid);
+		pid = waitpid(pid, &childStatus, 0);
+		printf("waitpid returned value %d\n", pid);
+		if (WIFEXITED(childStatus))
+		{
+			printf("Child %d exited normally with status %d\n", pid, WEXITSTATUS(childStatus));
+			if (childStatus == 0)
+			{
+				return childStatus;
+			}
+			else 
+				childStatus = 1;
+				printf("exited notmrally wtih status other than 0 %d\n", childStatus);
+				return childStatus;
+		}
+		else 
+		{
+			printf("Child %d exited abnormally due to signal %d\n", pid, WTERMSIG(childStatus));
+			return childStatus;
+		}
 		wait(NULL);
-		return;
 	}
 }
 
@@ -228,16 +249,17 @@ void openHelp()
 // Function to execute builtin commands
 int ownCmdHandler(char** parsed)
 {
-	int NoOfOwnCmds = 5, i, switchOwnArg = 0;
+	int NoOfOwnCmds = 4, i, switchOwnArg = 0;
 	char* ListOfOwnCmds[NoOfOwnCmds];
 	char* homeDir;
 	char* newDir;
+	int status = 0;
 
 	ListOfOwnCmds[0] = "exit";
 	ListOfOwnCmds[1] = "cd";
 	ListOfOwnCmds[2] = "status";
 	ListOfOwnCmds[3] = "#";
-	ListOfOwnCmds[4] = "\n\r";
+
 
   //compares the first element of the parsed string (if parsed is "ls -la" then parsed[0] is only ls)
 	for (i = 0; i < NoOfOwnCmds; i++) {
@@ -269,14 +291,10 @@ int ownCmdHandler(char** parsed)
 		
 			return 1;
 	case 3:
-		printf("status will print now");
+		printf("exit status value %d\n", status);
 		return 1;
 	case 4:
 		printf("\r");
-		return 1;
-	case 5:
-		printf("what\n");
-		sleep(3);
 		return 1;
 	default:
 		break;

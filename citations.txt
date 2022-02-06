@@ -18,3 +18,6 @@
 // https://danishpraka.sh/2018/01/15/write-a-shell.html 
 // Brewster lectures on YouTube: https://www.youtube.com/watch?v=1R9h-H2UnLs&list=PL0VYt36OaaJll8G0-0xrqaJW60I-5RXdW&index=17
 // https://stackoverflow.com/questions/13636252/c-minishell-adding-pipelines 
+// https://canvas.oregonstate.edu/courses/1884946/pages/exploration-process-api-monitoring-child-processes?module_item_id=21835973 // status
+// https://canvas.oregonstate.edu/courses/1884946/pages/exploration-process-api-executing-a-new-program?module_item_id=21835974 // new process
+//

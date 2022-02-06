@@ -14,18 +14,20 @@
 #define clear() printf("\033[H\033[J")
 
 
+
 int main()
 {
 	char inputString[MAXCOM], *parsedArgs[MAXLIST];
 	char* parsedArgsPiped[MAXLIST];
 	int execFlag = 0;
 	init_shell();
-  int status_code = 0;
   int ret;
   char *empty = {"\r"};
   int i;
   int comp;
-  int exit_status = 0;
+
+
+  
   // char *return = {"\r"};
 
 	while (1) {
@@ -45,7 +47,7 @@ int main()
     execFlag = processString(inputString,
 		parsedArgs, parsedArgsPiped);
     
-		
+	
 		// execflag returns zero if there is no command
 		// or it is a builtin command,
 		// 1 if it is a simple command
@@ -53,11 +55,14 @@ int main()
     
 		// execute
 
-    // if (execFlag == 3)
-    //   continue;
-		if (execFlag == 1)
-			execArgs(parsedArgs);
-      
+
+	   
+		if (execFlag == 1){
+			int childStatus;
+			childStatus = execArgs(parsedArgs);
+
+			printf("status of arg is %d\n", childStatus);
+		}
 		if (execFlag == 2)
 			execArgsPiped(parsedArgs, parsedArgsPiped);
     
