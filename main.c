@@ -22,7 +22,7 @@ int main()
 	init_shell();
   int status_code = 0;
   int ret;
-  char *comment = {"#"};
+  char *empty = {"\r"};
   int i;
   int comp;
   int exit_status = 0;
@@ -30,60 +30,31 @@ int main()
 
 	while (1) {
 		// print shell line
-		printDir();
+		printPrompt();
 		// take input
-		// if (takeInput(inputString))
-		// 	continue;
+		takeInput(inputString);
+    // check if inputString is NULL (if so continue)
+	if (strlen(inputString) == 0){
+		continue;
+	}
    
-		// process
-    if (takeInput(inputString))
-			continue;
-   
-   
-
-    ret = strcmp(inputString, comment);
-    //checks to see if input is a comment 
-    if (ret == 0)
-    {
-      continue;
-    }
-
-   
-
 
     size_t s = strlen(inputString);
 
-    // for (i = 0; i < s; ++i)
-    // {
-    //   comp = strcmp(inputString, "<");
-    //   if (comp == 0)
-    //   {
-    //     printf("call a < redirect\n");
-    //   } 
-    // }
-    // printf("no < found\n");
-
-    // for (i = 0; i < s; ++i)
-    // {
-    //   comp = strcmp(inputString, ">");
-    //   if (comp == 0)
-    //   {
-    //     printf("call a > redirect\n");
-    //   } 
-    // }
-    // printf("no > found\n");
     
     execFlag = processString(inputString,
 		parsedArgs, parsedArgsPiped);
     
-		// execFlag = parseSpace(inputString,
-		// parsedArgs);
+		
 		// execflag returns zero if there is no command
 		// or it is a builtin command,
 		// 1 if it is a simple command
 		// 2 if it is including a pipe.
     
 		// execute
+
+    // if (execFlag == 3)
+    //   continue;
 		if (execFlag == 1)
 			execArgs(parsedArgs);
       
