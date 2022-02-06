@@ -232,7 +232,8 @@ int ownCmdHandler(char** parsed)
 {
 	int NoOfOwnCmds = 4, i, switchOwnArg = 0;
 	char* ListOfOwnCmds[NoOfOwnCmds];
-	char* username;
+	char* homeDir;
+	char* newDir;
 
 	ListOfOwnCmds[0] = "exit";
 	ListOfOwnCmds[1] = "cd";
@@ -253,8 +254,21 @@ int ownCmdHandler(char** parsed)
 		exit(0);
 	case 2: //need to check if there is no parse[1], 
           // then need to set as if parse[1] = "~" or $HOME
-		chdir(parsed[1]); //parsed[0] is cd, parsed[1] is destination directory 
-		return 1;
+		  homeDir = getenv("HOME");
+		
+		  if (parsed[1] == NULL)
+		  {
+			printf("parsed[1] = %s\n", parsed[1]);
+			printf("going to home directory\n");
+			chdir(homeDir);
+			return 1;
+		  }
+		 else 
+		  	newDir = parsed[1];
+		 	printf("going to another dir %s\n", newDir);
+		  	chdir(newDir);
+		
+			return 1;
 	case 3:
 		printf("status will print now");
 		return 1;
