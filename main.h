@@ -89,59 +89,19 @@ void execArgs(char** parsed)
 	}
 }
 
-// Function where the piped system commands is executed
-void execArgsPiped(char** parsed, char** parsedpipe)
-{
+void runcmd(int fd, char ** parsedpipe){
 
-
-//   printf("*parsed = %s\n", *parsed);
-//   printf("parsedpipe[0] = %s\n)", parsedpipe[0]);
-  	int args = strlen(*parsed);
- // printf("strlen(*parsed = %d\n", args);
-
-	if (args != 2){
-		printf("Usage: ./main <filename to redirect stdout to>\n");
-		exit(1);
-	}
-
-	int targetFD = open(parsedpipe[0], O_WRONLY | O_CREATE , 0640);
-	
-	if (targetFD == -1) {
-		perror("open()");
-		exit(1);
-	}
-	fcntl(targetFD, F_SETFD, FD_CLOEXEC);
-	// Currently printf writes to the terminal
-	printf("The file descriptor for targetFD is %d\n", targetFD);
-
-	// Use dup2 to point FD 1, i.e., standard output to targetFD
-	int result = dup2(targetFD, 1);
-	if (result == -1) {
-		perror("dup2"); 
-		exit(2); 
-	}
-	// Now whatever we write to standard out will be written to targetFD
-	printf("All of this is being written to the file using printf\n"); 
-	
-	
-	runcmd(targetFD, parsed);
-	fflush(targetFD);
-	
-	exit(0);
-	
-}
-
-void runcmd(int fd, char ** parsed){
-
-	
+	int saved_stdout;
+	saved_stdout = dup(STDOUT_FILENO);
 	int status;
 
 	switch (fork()){
 		case 0: //child
 			dup2(fd, 1); //fd becomes stdout
-			execvp(parsed[0], parsed);
-			perror(parsed[0]);
-			exit(1);
+			execvp(parsedpipe[0], parsedpipe);
+			perror(parsedpipe[0]);
+			fflush(stdout);
+			break;
 
 		default: //parent
 			while (wait(&status) != -1); //picks up dead children
@@ -155,6 +115,55 @@ void runcmd(int fd, char ** parsed){
 
 	
 }
+// Function where the piped system commands is executed
+void execArgsPiped(char** parsed, char** parsedpipe)
+{
+
+
+//   printf("*parsed = %s\n", *parsed);
+//   printf("parsedpipe[0] = %s\n)", parsedpipe[0]);
+  	int args = strlen(*parsed);
+ // printf("strlen(*parsed = %d\n", args);
+	int saved_stdout;
+
+	if (args != 2){
+		printf("Usage: ./main <filename to redirect stdout to>\n");
+		exit(1);
+	}
+
+	int targetFD = open(parsedpipe[0], O_WRONLY | O_CREAT , 0640);
+	
+	if (targetFD == -1) {
+		perror("open()");
+		exit(1);
+	}
+	
+	// Currently printf writes to the terminal
+	printf("The file descriptor for targetFD is %d\n", targetFD);
+
+	// Use dup2 to point FD 1, i.e., standard output to targetFD
+	saved_stdout = dup(STDOUT_FILENO);
+	int result = dup2(targetFD, 1);
+	if (result == -1) {
+		perror("dup2"); 
+		exit(2); 
+	}
+	// Now whatever we write to standard out will be written to targetFD
+	printf("All of this is being written to the file using printf\n"); 
+	
+	
+	runcmd(targetFD, parsed);
+	close(targetFD);
+	fflush(stdout);
+	
+	
+	 dup2(saved_stdout, STDOUT_FILENO);
+	 close(saved_stdout);
+	return;
+	
+}
+
+
 
 void g4g(char ** parsedpipe, char ** parsed){
 	// 0 is read end, 1 is write end
@@ -200,47 +209,7 @@ void g4g(char ** parsedpipe, char ** parsed){
 		}
 	}
  }
-	// // Open source file
-	// int sourceFD = open(parsedpipe[0], O_RDONLY | O_WRONLY | O_TRUNC);
-	// if (sourceFD == -1) { 
-	// 	perror("source open()"); 
-	// 	exit(1); 
-	// }
-	// // Written to terminal
-	// printf("sourceFD == %d\n", sourceFD); 
-
-	// // Redirect stdin to source file
-	// int result = dup2(sourceFD, 0);
-	// if (result == -1) { 
-	// 	perror("source dup2()"); 
-	// 	exit(2); 
-	// }
-
-	// // Open target file
-	// int targetFD = open(parsedpipe[0], O_WRONLY | O_CREAT | O_TRUNC, 0644);
-	// if (targetFD == -1) { 
-	// 	perror("target open()"); 
-	// 	exit(1); 
-	// }
-
-	// printf("targetFD == %d\n", targetFD); // Written to terminal
-  
-	// // Redirect stdout to target file
-	// result = dup2(targetFD, 1);
-	// if (result == -1) { 
-	// 	perror("target dup2()"); 
-	// 	exit(2); 
-	// }
-	// // Run the sort program using execlp.
-	// // The stdin and stdout are pointing to files
-	// execlp(parsed[0], parsed, NULL);
 	
-	
-	// return;
-
-			
- //}
-
 // Help command builtin
 void openHelp()
 {
