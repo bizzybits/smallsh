@@ -37,18 +37,7 @@ int main()
 	if (strlen(inputString) == 0){
 		continue;
 	}
-    // while(strcmp(inputString, " "))
-    // {
-    //   execFlag = 3;
-    // }
-		// process
-
-    // ret = strcmp(inputString, "\n\r");
-    // //checks to see if input is a comment 
-    // if (ret == 0)
-    // { 
-    //   break;
-    // }
+   
 
     size_t s = strlen(inputString);
 
