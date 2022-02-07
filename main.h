@@ -6,6 +6,8 @@
 #include<sys/types.h>
 #include<sys/wait.h>
 #include <fcntl.h>
+#include <errno.h>
+#include <stdarg.h>
 
 #define MAXCOM 1000 // max number of letters to be supported
 #define MAXLIST 100 // max number of commands to be supported
@@ -91,8 +93,10 @@ int execArgs(char** parsed)
 		return 1;
 	} else if (pid == 0) {
 		if (execvp(parsed[0], parsed) < 0) {
-			printf("\nCould not execute command..\n");
+			perror(parsed[0]);
+			childStatus = 1;
 		}
+		return childStatus;
 		exit(0);
 	} else {
 		// waiting for child to terminate
@@ -120,6 +124,15 @@ int execArgs(char** parsed)
 	}
 }
 
+void err_syserr(const char *fmt, char * parsedpipe)
+{
+    int errnum = errno;
+    if (errnum != 0)
+        fprintf(stderr, "%d: %s\n", errnum, strerror(errnum));
+    putc('\n', stderr);
+    exit(EXIT_FAILURE);
+}
+
 void runcmd(int fd, char ** parsedpipe){
 
 	int saved_stdout;
@@ -130,7 +143,7 @@ void runcmd(int fd, char ** parsedpipe){
 		case 0: //child
 			dup2(fd, 1); //fd becomes stdout
 			execvp(parsedpipe[0], parsedpipe);
-			perror(parsedpipe[0]);
+			err_syserr("cannot open %s for input", parsedpipe[0]);
 			fflush(stdout);
 			break;
 
@@ -167,7 +180,7 @@ void execArgsPiped(char** parsed, char** parsedpipe)
 	}
 	
 	// Currently printf writes to the terminal
-	printf("The file descriptor for targetFD is %d\n", targetFD);
+	//printf("The file descriptor for targetFD is %d\n", targetFD);
 
 	// Use dup2 to point FD 1, i.e., standard output to targetFD
 	saved_stdout = dup(STDOUT_FILENO);
@@ -177,7 +190,7 @@ void execArgsPiped(char** parsed, char** parsedpipe)
 		exit(2); 
 	}
 	// Now whatever we write to standard out will be written to targetFD
-	printf("All of this is being written to the file using printf\n"); 
+	//printf("All of this is being written to the file using printf\n"); 
 	
 	
 	runcmd(targetFD, parsed);
@@ -326,7 +339,7 @@ int parsePipe(char* str, char** strpiped)
 {
 	int i;
 	for (i = 0; i < 2; i++) {
-		strpiped[i] = strsep(&str, "<");
+		strpiped[i] = strsep(&str, ">");
 		if (strpiped[i] == NULL)
 			break;
 	}
@@ -437,3 +450,51 @@ static void sigchld_status(void)
     printf("SIGCHLD set to %s\n", handling);
 }
 
+// int fileExistCheck(char ** parsed, char ** parsedpipe){
+
+// 	if ( access(fileToProcess, F_OK) == 0)
+// 		{
+// 			printf("Now processing the chosen file with the name %s\n", fileToProcess);
+
+// 			DIR *dr = opendir("."); //opendir() returns a pointer of DIR type 
+				
+// 			if (dr == NULL) //opendir() returns NULL if couldn't open directory
+// 			{
+// 				fprintf(stderr, "Could not open current directory: %s\n", de);
+// 				return 0;
+// 			}                
+
+// 			//generates a random number to append to directory name
+// 			srand(time(0));
+
+// 			int i;
+// 			int num;
+// 			char string[20];
+// 			for (i = 0; i < count; ++i) 
+// 			{
+// 				int num = (rand() %(upper - lower + 1)) + lower;
+// 				sprintf(string, "%d", num);
+// 			}
+
+// 			strcat(dirname, string); //appended to dirname here 
+			
+// 			check = mkdir(dirname, 0750); //creates a new directory with ONID.movies.random with permissions rwxr-x---
+
+// 			if (!check)
+// 			{ 
+// 				printf("Created directory with name %s\n", dirname);
+// 			}
+// 			else
+// 			{
+// 				printf("Unable to create directory\n");
+// 				exit(1);
+// 			}
+
+// 		}
+// 		else
+// 		{
+// 			printf("The file %s was not found. Try again\n", fileToProcess);
+// 			return -1;
+// 		}
+
+// }
