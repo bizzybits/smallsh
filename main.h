@@ -28,6 +28,13 @@ struct child {
   struct child *prev;
 };
 
+
+//to find the $$?
+void slice(const char *str, char *result, size_t start, size_t end)
+{
+    strncpy(result, str + start, end - start);
+}
+
 // struct sigaction {
 // 	void (*sa_handler)(int);
 // 	sigset_t sa_mask;
@@ -41,7 +48,6 @@ void handle_sigint(int sig)
 {
     printf("terminated by signal %d\n", sig);
 	fflush(stdout);
-	pause();
 }
 
 void sighandler(int sig_num)
@@ -49,8 +55,9 @@ void sighandler(int sig_num)
     // Reset handler to catch SIGTSTP next time
     signal(SIGTSTP, sighandler);
     printf("Entering foreground-only mode\n");
+	fflush(stdout);
 }
-  
+
 // Greeting shell during startup
 void init_shell()
 {
@@ -228,69 +235,6 @@ void execArgsPiped(char** parsed, char** parsedpipe)
 }
 
 
-
-void g4g(char ** parsedpipe, char ** parsed){
-	// 0 is read end, 1 is write end
-	int pipefd[2];
-	pid_t p1, p2;
-
-
-	p1 = fork();
-
-	if (p1 < 0){
-		printf("could not fork p1");
-	}
-
-	if (p1 == 0){
-		close(pipefd[0]);
-		dup2(pipefd[1], STDOUT_FILENO);
-		close(pipefd[1]);
-		if (execvp(parsed[0], parsed) < 0) {
-			printf("\nCould not execute command 1..");
-			exit(0);
-		}
-	} else {
-		// Parent executing
-		p2 = fork();
-		if (p2 < 0) {
-			printf("\nCould not fork");
-			return;
-		}
-		// Child 2 executing..
-		// It only needs to read at the read end
-		if (p2 == 0) {
-			close(pipefd[1]);
-			dup2(pipefd[0], STDIN_FILENO);
-			close(pipefd[0]);
-			if (execvp(parsed[0], parsedpipe) < 0) {
-				printf("\nCould not execute command 2..");
-				exit(0);
-			}
-		} else {
-			// parent executing, waiting for two children
-			wait(NULL);
-			wait(NULL);
-		}
-	}
- }
-	
-// Help command builtin
-void openHelp()
-{
-	puts("\n***WELCOME TO MY SHELL HELP***"
-		"\nCopyright @ Suprotik Dey"
-		"\n-Use the shell at your own risk..."
-		"\nList of Commands supported:"
-		"\n>cd"
-		"\n>ls"
-		"\n>exit"
-		"\n>all other general commands available in UNIX shell"
-		"\n>pipe handling"
-		"\n>improper space handling");
-
-	return;
-}
-
 // Function to execute builtin commands
 int ownCmdHandler(char** parsed, int childStatus)
 {
@@ -385,6 +329,11 @@ int parseSpace(char* str, char** parsed, int childStatus)
 		
 		if (parsed[i] == NULL)
 			break;
+		if (strstr(parsed[i],"$$") != NULL)
+		{
+			parsed[i] = strsep(&parsed[i], "$$");
+			sprintf(parsed[i], "%d", getpid());
+		}
 		if (strlen(parsed[i]) == 0)
 			i--;
 	}
@@ -427,83 +376,4 @@ int processString(char* str, char** parsed, char** parsedpipe, int childStatus)
 		return 1 + piped;
 }
 
-// struct child *createChild(char* str, char** parsed, char** parsedpipe)
-// {
 
-// 	struct child *currChild = malloc(sizeof(struct child));
-
-// 	currChild->command =  calloc(strlen(token) + 1, sizeof(char));
-// 	strcpy(currChild->command, parsed[0]);
-
-// 	currChild->pid = calloc(strlen(token) + 1, sizeof(int));
-// 	//get pid
-
-// 	currChild->status = calloc(strlen(token) + 1, sizeof(int));
-// 	//get exit exstatus
-
-// 	currChild->next = NULL;
-
-// 	currChild->prev = currChild;
-
-// }
-
-
-
-// struct child {
-//   char *command;
-//   int pid;
-//   int status;
-//   struct child *next;
-//   struct child *prev;
-// };
-
-
-
-// int fileExistCheck(char ** parsed, char ** parsedpipe){
-
-// 	if ( access(fileToProcess, F_OK) == 0)
-// 		{
-// 			printf("Now processing the chosen file with the name %s\n", fileToProcess);
-
-// 			DIR *dr = opendir("."); //opendir() returns a pointer of DIR type 
-				
-// 			if (dr == NULL) //opendir() returns NULL if couldn't open directory
-// 			{
-// 				fprintf(stderr, "Could not open current directory: %s\n", de);
-// 				return 0;
-// 			}                
-
-// 			//generates a random number to append to directory name
-// 			srand(time(0));
-
-// 			int i;
-// 			int num;
-// 			char string[20];
-// 			for (i = 0; i < count; ++i) 
-// 			{
-// 				int num = (rand() %(upper - lower + 1)) + lower;
-// 				sprintf(string, "%d", num);
-// 			}
-
-// 			strcat(dirname, string); //appended to dirname here 
-			
-// 			check = mkdir(dirname, 0750); //creates a new directory with ONID.movies.random with permissions rwxr-x---
-
-// 			if (!check)
-// 			{ 
-// 				printf("Created directory with name %s\n", dirname);
-// 			}
-// 			else
-// 			{
-// 				printf("Unable to create directory\n");
-// 				exit(1);
-// 			}
-
-// 		}
-// 		else
-// 		{
-// 			printf("The file %s was not found. Try again\n", fileToProcess);
-// 			return -1;
-// 		}
-
-// }

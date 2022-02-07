@@ -24,3 +24,4 @@
 // https://www.geeksforgeeks.org/signals-c-language/ user defined signal handlers
 // //https://stackoverflow.com/questions/13636252/c-minishell-adding-pipelines // i don't think i used this but it was in my list
 // https://www.geeksforgeeks.org/c-program-not-suspend-ctrlz-pressed/ signal handlers
+// https://stackoverflow.com/questions/26620388/c-substrings-c-string-slicing substring splicing
