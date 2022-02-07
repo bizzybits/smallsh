@@ -26,12 +26,24 @@ int main()
   	int comp;
   	int childStatus;
 
-  
-  // char *return = {"\r"};
+	//to handle signals
+	struct sigaction SIGTSTP_action = {0};
+
+	//to ignore sigint
+	signal(SIGINT, SIG_IGN);
+
+	//custom sigterms
+	SIGTSTP_action.sa_handler = catchSIGTSTP;
+	SIGTSTP_action.sa_flags = SA_RESTART;
+	sigfillset(&SIGTSTP_action.sa_mask);
+	sigaction(SIGSTP_action, NULL);
+
+	//something to hold a background flag
+	int is_background = 0;
 
 	while (1) {
-		signal(SIGINT, handle_sigint);
-		signal(SIGTSTP, sighandler);
+	//	signal(SIGINT, handle_sigint);
+	//	signal(SIGTSTP, sighandler);
 		// print shell line
 		printPrompt();
 		// take input
@@ -69,9 +81,13 @@ int main()
 		
 		}
 		if (execFlag == 2)
-			execArgsPiped(parsedArgs, parsedArgsPiped);
+			execArgsRedirect(parsedArgs, parsedArgsPiped);
     
     
 	}
+	signal(SIGQUIT, SIG_IGN);
+	kill(-1*getpid(), SIGQUIT);
+
+	free(inputString);
 	return 0;
 }

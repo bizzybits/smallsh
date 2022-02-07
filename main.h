@@ -42,21 +42,21 @@ void slice(const char *str, char *result, size_t start, size_t end)
 // 	void (*sa_sigaction)(int, siginfo_t*, void*);
 // };
 
-typedef void (*SigHandler)(int signum);
+//typedef void (*SigHandler)(int signum);
 
-void handle_sigint(int sig)
-{
-    printf("terminated by signal %d\n", sig);
-	fflush(stdout);
-}
+// void handle_sigint(int sig)
+// {
+//     printf("terminated by signal %d\n", sig);
+// 	fflush(stdout);
+// }
 
-void sighandler(int sig_num)
-{
-    // Reset handler to catch SIGTSTP next time
-    signal(SIGTSTP, sighandler);
-    printf("Entering foreground-only mode\n");
-	fflush(stdout);
-}
+// void sighandler(int sig_num)
+// {
+//     // Reset handler to catch SIGTSTP next time
+//     signal(SIGTSTP, sighandler);
+//     printf("Entering foreground-only mode\n");
+// 	fflush(stdout);
+// }
 
 
 // Function to take input
@@ -174,7 +174,7 @@ void runcmd(int fd, char ** parsedRedirectArgs){
 	
 }
 // Function where the piped system commands is executed
-void execArgsPiped(char** parsedArgs, char** parsedRedirectArgs)
+void execArgsRedirect(char** parsedArgs, char** parsedRedirectArgs)
 {
 
   	int args = strlen(*parsedArgs);
@@ -288,7 +288,7 @@ int findBackground(char* str, char** strpiped)
 	
 }
 // function for finding pipe
-int parsePipe(char* str, char** strpiped)
+int parseRedirect(char* str, char** strpiped)
 {
 	int i;
 	for (i = 0; i < 2; i++) {
@@ -333,10 +333,10 @@ int processString(char* str, char** parsedArgs, char** parsedRedirectArgs, int c
 {
 
 	char* strpiped[2];
-	int piped = 0;
+	int redirect = 0;
 	int background = 0;
 
-	piped = parsePipe(str, strpiped);
+	redirect = parseRedirect(str, strpiped);
 	background = findBackground(str, strpiped);
 
 	if (background)
@@ -346,7 +346,7 @@ int processString(char* str, char** parsedArgs, char** parsedRedirectArgs, int c
 		parseSpace(strpiped[0], parsedArgs, childStatus);
 	}
 
-	if (piped) 
+	if (redirect) 
 	{
 		parseSpace(strpiped[0], parsedArgs, childStatus);
 		parseSpace(strpiped[1], parsedRedirectArgs, childStatus);
