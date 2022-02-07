@@ -58,22 +58,6 @@ void sighandler(int sig_num)
 	fflush(stdout);
 }
 
-// Greeting shell during startup
-void init_shell()
-{
-	clear();
-	printf("\n\n\n\n******************"
-		"************************");
-	printf("\n\n\n\t****MY SHELL****");
-	printf("\n\n\t-USE AT YOUR OWN RISK-");
-	printf("\n\n\n\n*******************"
-		"***********************");
-	char* username = getenv("USER");
-	printf("\n\n\nUSER is: @%s", username);
-	printf("\n");
-	sleep(1);
-	clear();
-}
 
 // Function to take input
 int takeInput(char* str)
@@ -112,7 +96,7 @@ void printStatus(int childStatus)
 }
 
 // Function where the system command is executed
-int execArgs(char** parsed)
+int execArgs(char** parsedArgs)
 {
 	// Forking a child
 	int childStatus;
@@ -122,8 +106,8 @@ int execArgs(char** parsed)
 		printf("\nFailed forking child..\n");
 		return 1;
 	} else if (pid == 0) {
-		if (execvp(parsed[0], parsed) < 0) {
-			perror(parsed[0]);
+		if (execvp(parsedArgs[0], parsedArgs) < 0) {
+			perror(parsedArgs[0]);
 			childStatus = 1;
 		}
 		return childStatus;
@@ -154,7 +138,7 @@ int execArgs(char** parsed)
 	}
 }
 
-void err_syserr(const char *fmt, char * parsedpipe)
+void err_syserr(const char *fmt, char * parsedRedirectArgs)
 {
     int errnum = errno;
     if (errnum != 0)
@@ -163,7 +147,7 @@ void err_syserr(const char *fmt, char * parsedpipe)
     exit(EXIT_FAILURE);
 }
 
-void runcmd(int fd, char ** parsedpipe){
+void runcmd(int fd, char ** parsedRedirectArgs){
 
 	int saved_stdout;
 	saved_stdout = dup(STDOUT_FILENO);
@@ -172,8 +156,8 @@ void runcmd(int fd, char ** parsedpipe){
 	switch (fork()){
 		case 0: //child
 			dup2(fd, 1); //fd becomes stdout
-			execvp(parsedpipe[0], parsedpipe);
-			err_syserr("cannot open %s for input", parsedpipe[0]);
+			execvp(parsedRedirectArgs[0], parsedRedirectArgs);
+			err_syserr("cannot open %s for input", parsedRedirectArgs[0]);
 			fflush(stdout);
 			break;
 
@@ -190,10 +174,10 @@ void runcmd(int fd, char ** parsedpipe){
 	
 }
 // Function where the piped system commands is executed
-void execArgsPiped(char** parsed, char** parsedpipe)
+void execArgsPiped(char** parsedArgs, char** parsedRedirectArgs)
 {
 
-  	int args = strlen(*parsed);
+  	int args = strlen(*parsedArgs);
 
 	int saved_stdout;
 
@@ -202,7 +186,7 @@ void execArgsPiped(char** parsed, char** parsedpipe)
 		exit(1);
 	}
 
-	int targetFD = open(parsedpipe[0], O_WRONLY | O_CREAT , 0640);
+	int targetFD = open(parsedRedirectArgs[0], O_WRONLY | O_CREAT , 0640);
 	
 	if (targetFD == -1) {
 		perror("open()");
@@ -223,7 +207,7 @@ void execArgsPiped(char** parsed, char** parsedpipe)
 	//printf("All of this is being written to the file using printf\n"); 
 	
 	
-	runcmd(targetFD, parsed);
+	runcmd(targetFD, parsedArgs);
 	close(targetFD);
 	fflush(stdout);
 	
@@ -236,7 +220,7 @@ void execArgsPiped(char** parsed, char** parsedpipe)
 
 
 // Function to execute builtin commands
-int ownCmdHandler(char** parsed, int childStatus)
+int ownCmdHandler(char** parsedArgs, int childStatus)
 {
 	int NoOfOwnCmds = 3, i, switchOwnArg = 0;
 	char* ListOfOwnCmds[NoOfOwnCmds];
@@ -249,9 +233,9 @@ int ownCmdHandler(char** parsed, int childStatus)
 	ListOfOwnCmds[2] = "#";
 
 
-  //compares the first element of the parsed string (if parsed is "ls -la" then parsed[0] is only ls)
+  //compares the first element of the parsed string (if parsedArgs is "ls -la" then parsedArgs[0] is only ls)
 	for (i = 0; i < NoOfOwnCmds; i++) {
-		if (strcmp(parsed[0], ListOfOwnCmds[i]) == 0) {
+		if (strcmp(parsedArgs[0], ListOfOwnCmds[i]) == 0) {
 			switchOwnArg = i + 1; //if it matches it will be 1, 2, or 3
 			break;
 		}
@@ -260,22 +244,24 @@ int ownCmdHandler(char** parsed, int childStatus)
 	switch (switchOwnArg) {
 	case 1:
 		printf("\nGoodbye\n");
+		fflush(stdout);
 		exit(0);
 	case 2: //need to check if there is no parse[1], 
           // then need to set as if parse[1] = "~" or $HOME
 		  homeDir = getenv("HOME");
 		
-		  if (parsed[1] == NULL)
+		  if (parsedArgs[1] == NULL)
 		  {
 			chdir(homeDir);
 			return 1;
 		  }
 		 else 
-		  	newDir = parsed[1];
+		  	newDir = parsedArgs[1];
 		  	chdir(newDir);
 			return 1;
 	case 3:
 		printf("\r");
+		fflush(stdout);
 		return 1;
 	default:
 		break;
@@ -318,32 +304,32 @@ int parsePipe(char* str, char** strpiped)
 	}
 }
 // function for parsing command words
-int parseSpace(char* str, char** parsed, int childStatus)
+int parseSpace(char* str, char** parsedArgs, int childStatus)
 {
 	int i;
 
 
 	for (i = 0; i < MAXLIST; i++) {
-		parsed[i] = strsep(&str, " ");
+		parsedArgs[i] = strsep(&str, " ");
 
 		
-		if (parsed[i] == NULL)
+		if (parsedArgs[i] == NULL)
 			break;
-		if (strstr(parsed[i],"$$") != NULL)
+		if (strstr(parsedArgs[i],"$$") != NULL)
 		{
-			parsed[i] = strsep(&parsed[i], "$$");
-			sprintf(parsed[i], "%d", getpid());
+			parsedArgs[i] = strsep(&parsedArgs[i], "$$");
+			sprintf(parsedArgs[i], "%d", getpid());
 		}
-		if (strlen(parsed[i]) == 0)
+		if (strlen(parsedArgs[i]) == 0)
 			i--;
 	}
-  if (ownCmdHandler(parsed, childStatus))
+  if (ownCmdHandler(parsedArgs, childStatus))
 		return 0;
 	else
 		return 1;
 }
 
-int processString(char* str, char** parsed, char** parsedpipe, int childStatus)
+int processString(char* str, char** parsedArgs, char** parsedRedirectArgs, int childStatus)
 {
 
 	char* strpiped[2];
@@ -356,19 +342,20 @@ int processString(char* str, char** parsed, char** parsedpipe, int childStatus)
 	if (background)
 	{
 		printf("background char found\n");
-		parseSpace(strpiped[0], parsed, childStatus);
+		fflush(stdout);
+		parseSpace(strpiped[0], parsedArgs, childStatus);
 	}
 
 	if (piped) 
 	{
-		parseSpace(strpiped[0], parsed, childStatus);
-		parseSpace(strpiped[1], parsedpipe, childStatus);
+		parseSpace(strpiped[0], parsedArgs, childStatus);
+		parseSpace(strpiped[1], parsedRedirectArgs, childStatus);
 
 	}else {
-		parseSpace(str, parsed, childStatus);
+		parseSpace(str, parsedArgs, childStatus);
 	}
 //# TODO look into why ownCmdHandler called in processString and parseSpace
-	if (ownCmdHandler(parsed, childStatus))
+	if (ownCmdHandler(parsedArgs, childStatus))
 		return 0;
 
 

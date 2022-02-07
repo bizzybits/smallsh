@@ -20,12 +20,11 @@ int main()
 	char inputString[MAXCOM], *parsedArgs[MAXLIST];
 	char* parsedArgsPiped[MAXLIST];
 	int execFlag = 0;
-	init_shell();
-  int ret;
-  char *empty = {"\r"};
-  int i;
-  int comp;
-  int childStatus;
+  	int ret;
+  	char *empty = {"\r"};
+  	int i;
+  	int comp;
+  	int childStatus;
 
   
   // char *return = {"\r"};
