@@ -31,6 +31,8 @@ int main()
   // char *return = {"\r"};
 
 	while (1) {
+		signal(SIGINT, handle_sigint);
+		signal(SIGTSTP, sighandler);
 		// print shell line
 		printPrompt();
 		// take input
