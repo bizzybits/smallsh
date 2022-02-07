@@ -93,7 +93,7 @@ int execArgs(char** parsed)
 		return 1;
 	} else if (pid == 0) {
 		if (execvp(parsed[0], parsed) < 0) {
-			printf("\nCannot open execute command %s\n", parsed[0]);
+			perror(parsed[0]);
 			childStatus = 1;
 		}
 		return childStatus;
@@ -127,9 +127,6 @@ int execArgs(char** parsed)
 void err_syserr(const char *fmt, char * parsedpipe)
 {
     int errnum = errno;
-    va_list args;
-    va_start(args, fmt);
-    vfprintf(stderr, fmt, args);
     if (errnum != 0)
         fprintf(stderr, "%d: %s\n", errnum, strerror(errnum));
     putc('\n', stderr);
