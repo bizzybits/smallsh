@@ -342,7 +342,6 @@ int processString(char* str, char** parsedArgs, char** parsedRedirectArgs, int c
 	if (background)
 	{
 		printf("background char found\n");
-		fflush(stdout);
 		parseSpace(strpiped[0], parsedArgs, childStatus);
 	}
 
@@ -360,7 +359,7 @@ int processString(char* str, char** parsedArgs, char** parsedRedirectArgs, int c
 
 
 	else
-		return 1 + piped;
+		return 1 + redirect;
 }
 
 
