@@ -28,6 +28,29 @@ struct child {
   struct child *prev;
 };
 
+// struct sigaction {
+// 	void (*sa_handler)(int);
+// 	sigset_t sa_mask;
+// 	int sa_flags;
+// 	void (*sa_sigaction)(int, siginfo_t*, void*);
+// };
+
+typedef void (*SigHandler)(int signum);
+
+void handle_sigint(int sig)
+{
+    printf("terminated by signal %d\n", sig);
+	fflush(stdout);
+	pause();
+}
+
+void sighandler(int sig_num)
+{
+    // Reset handler to catch SIGTSTP next time
+    signal(SIGTSTP, sighandler);
+    printf("Entering foreground-only mode\n");
+}
+  
 // Greeting shell during startup
 void init_shell()
 {
@@ -435,20 +458,6 @@ int processString(char* str, char** parsed, char** parsedpipe, int childStatus)
 // };
 
 
-//https://stackoverflow.com/questions/13636252/c-minishell-adding-pipelines
-typedef void (*SigHandler)(int signum);
-
-static void sigchld_status(void)
-{
-    const char *handling = "Handler";
-    SigHandler sigchld = signal(SIGCHLD, SIG_IGN);
-    signal(SIGCHLD, sigchld);
-    if (sigchld == SIG_IGN)
-        handling = "Ignored";
-    else if (sigchld == SIG_DFL)
-        handling = "Default";
-    printf("SIGCHLD set to %s\n", handling);
-}
 
 // int fileExistCheck(char ** parsed, char ** parsedpipe){
 
