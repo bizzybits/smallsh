@@ -1,10 +1,7 @@
 All of this is being written to the file using printf
-badfile
-citations.txt
-junk
-junk2
-junk3
-main.c
+ 13  23 156 junk
+ 13  23 156 total
+in.c
 main.h
 Makefile
 movies

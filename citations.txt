@@ -20,4 +20,4 @@
 // https://stackoverflow.com/questions/13636252/c-minishell-adding-pipelines 
 // https://canvas.oregonstate.edu/courses/1884946/pages/exploration-process-api-monitoring-child-processes?module_item_id=21835973 // status
 // https://canvas.oregonstate.edu/courses/1884946/pages/exploration-process-api-executing-a-new-program?module_item_id=21835974 // new process
-//
+// https://stackoverflow.com/questions/40077022/c-replace-no-such-file-or-directory-message // custom error message to replace perror
