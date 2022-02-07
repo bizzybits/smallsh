@@ -312,11 +312,12 @@ int findBackground(char* str, char** strpiped)
 	i = strstr(str, "&");
 	if (i != NULL)
 	{
-		printf("found &");
+	 //	printf("found &");
+		return 1;
 	}
 	else 
-		printf("no &");
-	
+	//	printf("no &");
+		return 0;
 	
 	
 }
@@ -381,7 +382,7 @@ int processString(char* str, char** parsed, char** parsedpipe, int childStatus)
 	}else {
 		parseSpace(str, parsed, childStatus);
 	}
-
+//# TODO look into why ownCmdHandler called in processString and parseSpace
 	if (ownCmdHandler(parsed, childStatus))
 		return 0;
 
