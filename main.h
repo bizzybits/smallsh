@@ -20,29 +20,13 @@
 // Clearing the shell using escape sequences
 #define clear() printf("\033[H\033[J")
 
-struct child {
-  char *command;
-  int pid;
-  int status;
-  struct child *next;
-  struct child *prev;
-};
 
-// struct sigaction {
-// 	void (*sa_handler)(int);
-// 	sigset_t sa_mask;
-// 	int sa_flags;
-// 	void (*sa_sigaction)(int, siginfo_t*, void*);
-// };
 
-typedef void (*SigHandler)(int signum);
-
-void handle_sigint(int sig)
+void handle_sigint(int signo)
 {
-    printf("terminated by signal %d\n", sig);
-	fflush(stdout);
-	pause();
-}
+    char* message = "terminated by signal 2\n";
+	write(STDOUT_FILENO, message, 25);
+	sleep(3);
 
 void sighandler(int sig_num)
 {
@@ -51,22 +35,6 @@ void sighandler(int sig_num)
     printf("Entering foreground-only mode\n");
 }
   
-// Greeting shell during startup
-void init_shell()
-{
-	clear();
-	printf("\n\n\n\n******************"
-		"************************");
-	printf("\n\n\n\t****MY SHELL****");
-	printf("\n\n\t-USE AT YOUR OWN RISK-");
-	printf("\n\n\n\n*******************"
-		"***********************");
-	char* username = getenv("USER");
-	printf("\n\n\nUSER is: @%s", username);
-	printf("\n");
-	sleep(1);
-	clear();
-}
 
 // Function to take input
 int takeInput(char* str)
@@ -427,83 +395,3 @@ int processString(char* str, char** parsed, char** parsedpipe, int childStatus)
 		return 1 + piped;
 }
 
-// struct child *createChild(char* str, char** parsed, char** parsedpipe)
-// {
-
-// 	struct child *currChild = malloc(sizeof(struct child));
-
-// 	currChild->command =  calloc(strlen(token) + 1, sizeof(char));
-// 	strcpy(currChild->command, parsed[0]);
-
-// 	currChild->pid = calloc(strlen(token) + 1, sizeof(int));
-// 	//get pid
-
-// 	currChild->status = calloc(strlen(token) + 1, sizeof(int));
-// 	//get exit exstatus
-
-// 	currChild->next = NULL;
-
-// 	currChild->prev = currChild;
-
-// }
-
-
-
-// struct child {
-//   char *command;
-//   int pid;
-//   int status;
-//   struct child *next;
-//   struct child *prev;
-// };
-
-
-
-// int fileExistCheck(char ** parsed, char ** parsedpipe){
-
-// 	if ( access(fileToProcess, F_OK) == 0)
-// 		{
-// 			printf("Now processing the chosen file with the name %s\n", fileToProcess);
-
-// 			DIR *dr = opendir("."); //opendir() returns a pointer of DIR type 
-				
-// 			if (dr == NULL) //opendir() returns NULL if couldn't open directory
-// 			{
-// 				fprintf(stderr, "Could not open current directory: %s\n", de);
-// 				return 0;
-// 			}                
-
-// 			//generates a random number to append to directory name
-// 			srand(time(0));
-
-// 			int i;
-// 			int num;
-// 			char string[20];
-// 			for (i = 0; i < count; ++i) 
-// 			{
-// 				int num = (rand() %(upper - lower + 1)) + lower;
-// 				sprintf(string, "%d", num);
-// 			}
-
-// 			strcat(dirname, string); //appended to dirname here 
-			
-// 			check = mkdir(dirname, 0750); //creates a new directory with ONID.movies.random with permissions rwxr-x---
-
-// 			if (!check)
-// 			{ 
-// 				printf("Created directory with name %s\n", dirname);
-// 			}
-// 			else
-// 			{
-// 				printf("Unable to create directory\n");
-// 				exit(1);
-// 			}
-
-// 		}
-// 		else
-// 		{
-// 			printf("The file %s was not found. Try again\n", fileToProcess);
-// 			return -1;
-// 		}
-
-// }
