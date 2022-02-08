@@ -20,6 +20,7 @@
 // Clearing the shell using escape sequences
 #define clear() printf("\033[H\033[J")
 
+
 struct child {
   char *command;
   int pid;
@@ -28,45 +29,16 @@ struct child {
   struct child *prev;
 };
 
-// struct sigaction {
-// 	void (*sa_handler)(int);
-// 	sigset_t sa_mask;
-// 	int sa_flags;
-// 	void (*sa_sigaction)(int, siginfo_t*, void*);
-// };
 
-typedef void (*SigHandler)(int signum);
 
-void handle_sigint(int sig)
-{
-    printf("terminated by signal %d\n", sig);
-	fflush(stdout);
-	pause();
+void handle_SIGINT(int signo){
+	char* message = "Caught SIGINT, sleeping for 5 seconds\n";
+	// We are using write rather than printf
+	write(STDOUT_FILENO, message, 39);
+	sleep(5);
 }
 
-void sighandler(int sig_num)
-{
-    // Reset handler to catch SIGTSTP next time
-    signal(SIGTSTP, sighandler);
-    printf("Entering foreground-only mode\n");
-}
-  
-// Greeting shell during startup
-void init_shell()
-{
-	clear();
-	printf("\n\n\n\n******************"
-		"************************");
-	printf("\n\n\n\t****MY SHELL****");
-	printf("\n\n\t-USE AT YOUR OWN RISK-");
-	printf("\n\n\n\n*******************"
-		"***********************");
-	char* username = getenv("USER");
-	printf("\n\n\nUSER is: @%s", username);
-	printf("\n");
-	sleep(1);
-	clear();
-}
+
 
 // Function to take input
 int takeInput(char* str)
@@ -316,6 +288,7 @@ int ownCmdHandler(char** parsed, int childStatus)
 	switch (switchOwnArg) {
 	case 1:
 		printf("\nGoodbye\n");
+		fflush(stdout);
 		exit(0);
 	case 2: //need to check if there is no parse[1], 
           // then need to set as if parse[1] = "~" or $HOME
