@@ -195,7 +195,6 @@ int ownCmdHandler(char** parsed, int childStatus)
 
 	switch (switchOwnArg) {
 	case 1:
-		printf("\nGoodbye\n");
 		exit(0);
 	case 2: //need to check if there is no parse[1], 
           // then need to set as if parse[1] = "~" or $HOME
@@ -257,7 +256,7 @@ int parseSpace(char* str, char** parsed, int childStatus)
 {
 	int i;
 
-	for (i = 0; i < MAXLIST; i++) {
+	for (i = 0; i < MAXARGS; i++) {
 		parsed[i] = strsep(&str, " ");
 
 		
