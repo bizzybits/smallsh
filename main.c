@@ -42,7 +42,7 @@ int main()
 	int is_background = 0;
 
 	while (1) {
-	//	signal(SIGINT, handle_sigint);
+		signal(SIGINT, handle_sigint);
 	//	signal(SIGTSTP, sighandler);
 		// print shell line
 		printPrompt();

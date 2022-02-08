@@ -44,11 +44,11 @@ void slice(const char *str, char *result, size_t start, size_t end)
 
 //typedef void (*SigHandler)(int signum);
 
-// void handle_sigint(int sig)
-// {
-//     printf("terminated by signal %d\n", sig);
-// 	fflush(stdout);
-// }
+void handle_sigint(int sig)
+{
+    printf("terminated by signal %d\n", sig);
+	fflush(stdout);
+}
 
 // void sighandler(int sig_num)
 // {

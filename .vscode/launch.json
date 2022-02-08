@@ -5,7 +5,7 @@
       "name": "(gdb) Launch",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/movies",
+      "program": "${workspaceFolder}/smallsh",
       "args": [],
       "stopAtEntry": true,
       "cwd": "${fileDirname}",
