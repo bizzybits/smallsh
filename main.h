@@ -20,43 +20,19 @@
 // Clearing the shell using escape sequences
 #define clear() printf("\033[H\033[J")
 
-struct child {
-  char *command;
-  int pid;
-  int status;
-  struct child *next;
-  struct child *prev;
-};
-
-
 //to find the $$?
 void slice(const char *str, char *result, size_t start, size_t end)
 {
     strncpy(result, str + start, end - start);
 }
 
-// struct sigaction {
-// 	void (*sa_handler)(int);
-// 	sigset_t sa_mask;
-// 	int sa_flags;
-// 	void (*sa_sigaction)(int, siginfo_t*, void*);
-// };
-
-//typedef void (*SigHandler)(int signum);
-
-void handle_sigint(int sig)
-{
-    printf("terminated by signal %d\n", sig);
-	fflush(stdout);
+/* Our signal handler for SIGINT */
+void handle_SIGINT(int signo){
+	char* message = "terminated by signal 2\n";
+	// We are using write rather than printf
+	write(STDOUT_FILENO, message, 39);
+	sleep(5);
 }
-
-// void sighandler(int sig_num)
-// {
-//     // Reset handler to catch SIGTSTP next time
-//     signal(SIGTSTP, sighandler);
-//     printf("Entering foreground-only mode\n");
-// 	fflush(stdout);
-// }
 
 
 // Function to take input
@@ -114,25 +90,21 @@ int execArgs(char** parsedArgs)
 		exit(0);
 	} else {
 		// waiting for child to terminate
-	//	printf("Child's pid = %d\n", pid);
+		//printf("background pid is %d\n", pid);
 		pid = waitpid(pid, &childStatus, 0);
-	//	printf("waitpid returned value %d\n", pid);
 		if (WIFEXITED(childStatus))
 		{
-			//printf("Child %d exited normally with status %d\n", pid, WEXITSTATUS(childStatus));
-			if (childStatus == 0)
+			if (childStatus == 0) //Child exited normally with status 0
 			{
-				return childStatus;
+				return childStatus, pid;
 			}
 			else 
-				childStatus = 1;
-			//	printf("exited notmrally wtih status other than 0 %d\n", childStatus);
+				childStatus = 1; //exited notmrally wtih status other than 0 
 				return childStatus;
 		}
 		else 
 		{
-		//	printf("Child %d exited abnormally due to signal %d\n", pid, WTERMSIG(childStatus));
-			return childStatus;
+			return childStatus; //Child exited abnormally due to signal
 		}
 		wait(NULL);
 	}
@@ -194,7 +166,6 @@ void execArgsRedirect(char** parsedArgs, char** parsedRedirectArgs)
 	}
 	
 	// Currently printf writes to the terminal
-	//printf("The file descriptor for targetFD is %d\n", targetFD);
 
 	// Use dup2 to point FD 1, i.e., standard output to targetFD
 	saved_stdout = dup(STDOUT_FILENO);
@@ -204,16 +175,13 @@ void execArgsRedirect(char** parsedArgs, char** parsedRedirectArgs)
 		exit(2); 
 	}
 	// Now whatever we write to standard out will be written to targetFD
-	//printf("All of this is being written to the file using printf\n"); 
 	
 	
 	runcmd(targetFD, parsedArgs);
 	close(targetFD);
 	fflush(stdout);
-	
-	
-	 dup2(saved_stdout, STDOUT_FILENO);
-	 close(saved_stdout);
+	dup2(saved_stdout, STDOUT_FILENO);
+	close(saved_stdout);
 	return;
 	
 }

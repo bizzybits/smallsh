@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <signal.h>
 #include "main.h"
 
 #define MAXCOM 1000 // max number of letters to be supported
@@ -12,7 +13,6 @@
 
 // Clearing the shell using escape sequences
 #define clear() printf("\033[H\033[J")
-
 
 
 int main()
@@ -26,24 +26,22 @@ int main()
   	int comp;
   	int childStatus;
 
-	// //to handle signals
-	// struct sigaction SIGTSTP_action = {0};
+	//to handle signals
+	struct sigaction SIGINT_action = {0};
 
-	// //to ignore sigint
-	// signal(SIGINT, SIG_IGN);
-
-	// //custom sigterms
-	// SIGTSTP_action.sa_handler = catchSIGTSTP;
-	// SIGTSTP_action.sa_flags = SA_RESTART;
-	// sigfillset(&SIGTSTP_action.sa_mask);
-	// sigaction(SIGSTP_action, NULL);
+	
+	//custom sigterms
+	SIGINT_action.sa_handler = handle_SIGINT;
+	SIGINT_action.sa_flags = 0;
+	sigfillset(&SIGINT_action.sa_mask);
+	sigaction(SIGINT, &SIGINT_action, NULL);
 
 	//something to hold a background flag
 	int is_background = 0;
 
 	while (1) {
-		signal(SIGINT, handle_sigint);
-	//	signal(SIGTSTP, sighandler);
+		signal(SIGINT, handle_SIGINT);
+
 		// print shell line
 		printPrompt();
 		// take input
@@ -85,9 +83,6 @@ int main()
     
     
 	}
-	//signal(SIGQUIT, SIG_IGN);
-	//kill(-1*getpid(), SIGQUIT);
 
-	//free(inputString);
 	return 0;
 }
