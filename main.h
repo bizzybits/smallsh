@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include<stdio.h>
 #include<string.h>
 #include<stdlib.h>
@@ -8,33 +7,24 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <signal.h>
 
-#define MAXCOM 1000 // max number of letters to be supported
-#define MAXLIST 100 // max number of commands to be supported
-
+#define MAXCHARS 2048 // max number of letters to be supported
+#define MAXARGS 512 // max number of commands to be supported
 #define MAX_VAR_NUM 10
 #define PIPE_MAX_NUM 10
 #define FILE_MAX_SIZE 40
 #define MAXFILE 81
-
-// Clearing the shell using escape sequences
-#define clear() printf("\033[H\033[J")
-
-
 
 void handle_sigint(int signo)
 {
     char* message = "terminated by signal 2\n";
 	write(STDOUT_FILENO, message, 25);
 	sleep(3);
-
-void sighandler(int sig_num)
-{
-    // Reset handler to catch SIGTSTP next time
-    signal(SIGTSTP, sighandler);
-    printf("Entering foreground-only mode\n");
 }
-  
+
+// To implement: 
+// SIGTSTP flag
 
 // Function to take input
 int takeInput(char* str)
@@ -60,13 +50,13 @@ int takeInput(char* str)
 	}
 }
 
-// Function to print Current Directory.
+// Function to print shell prompt.
 void printPrompt()
 {
 	printf(": ");
 }
 
-//Function to print last call status
+// Function to print last process's exit status.
 void printStatus(int childStatus)
 {
 	printf("exit valud %d\n", childStatus);
@@ -91,25 +81,20 @@ int execArgs(char** parsed)
 		exit(0);
 	} else {
 		// waiting for child to terminate
-	//	printf("Child's pid = %d\n", pid);
 		pid = waitpid(pid, &childStatus, 0);
-	//	printf("waitpid returned value %d\n", pid);
 		if (WIFEXITED(childStatus))
 		{
-			//printf("Child %d exited normally with status %d\n", pid, WEXITSTATUS(childStatus));
-			if (childStatus == 0)
+			if (childStatus == 0) //Child exited normally with status 0
 			{
 				return childStatus;
 			}
 			else 
-				childStatus = 1;
-			//	printf("exited notmrally wtih status other than 0 %d\n", childStatus);
+				childStatus = 1; //Child exited normally with status other than 0
 				return childStatus;
 		}
 		else 
 		{
-		//	printf("Child %d exited abnormally due to signal %d\n", pid, WTERMSIG(childStatus));
-			return childStatus;
+			return childStatus; //Child exited abnormally due to signal
 		}
 		wait(NULL);
 	}
@@ -124,13 +109,14 @@ void err_syserr(const char *fmt, char * parsedpipe)
     exit(EXIT_FAILURE);
 }
 
-void runcmd(int fd, char ** parsedpipe){
-
+void runcmd(int fd, char ** parsedpipe)
+{
 	int saved_stdout;
 	saved_stdout = dup(STDOUT_FILENO);
 	int status;
 
-	switch (fork()){
+	switch (fork())
+	{
 		case 0: //child
 			dup2(fd, 1); //fd becomes stdout
 			execvp(parsedpipe[0], parsedpipe);
@@ -145,10 +131,7 @@ void runcmd(int fd, char ** parsedpipe){
 		case -1:
 			perror("fork");
 	}
-
 	return;
-
-	
 }
 // Function where the piped system commands is executed
 void execArgsPiped(char** parsed, char** parsedpipe)
@@ -171,8 +154,6 @@ void execArgsPiped(char** parsed, char** parsedpipe)
 	}
 	
 	// Currently printf writes to the terminal
-	//printf("The file descriptor for targetFD is %d\n", targetFD);
-
 	// Use dup2 to point FD 1, i.e., standard output to targetFD
 	saved_stdout = dup(STDOUT_FILENO);
 	int result = dup2(targetFD, 1);
@@ -181,99 +162,30 @@ void execArgsPiped(char** parsed, char** parsedpipe)
 		exit(2); 
 	}
 	// Now whatever we write to standard out will be written to targetFD
-	//printf("All of this is being written to the file using printf\n"); 
-	
 	
 	runcmd(targetFD, parsed);
 	close(targetFD);
 	fflush(stdout);
-	
-	
-	 dup2(saved_stdout, STDOUT_FILENO);
-	 close(saved_stdout);
+	dup2(saved_stdout, STDOUT_FILENO);
+	close(saved_stdout);
 	return;
 	
 }
 
-
-
-void g4g(char ** parsedpipe, char ** parsed){
-	// 0 is read end, 1 is write end
-	int pipefd[2];
-	pid_t p1, p2;
-
-
-	p1 = fork();
-
-	if (p1 < 0){
-		printf("could not fork p1");
-	}
-
-	if (p1 == 0){
-		close(pipefd[0]);
-		dup2(pipefd[1], STDOUT_FILENO);
-		close(pipefd[1]);
-		if (execvp(parsed[0], parsed) < 0) {
-			printf("\nCould not execute command 1..");
-			exit(0);
-		}
-	} else {
-		// Parent executing
-		p2 = fork();
-		if (p2 < 0) {
-			printf("\nCould not fork");
-			return;
-		}
-		// Child 2 executing..
-		// It only needs to read at the read end
-		if (p2 == 0) {
-			close(pipefd[1]);
-			dup2(pipefd[0], STDIN_FILENO);
-			close(pipefd[0]);
-			if (execvp(parsed[0], parsedpipe) < 0) {
-				printf("\nCould not execute command 2..");
-				exit(0);
-			}
-		} else {
-			// parent executing, waiting for two children
-			wait(NULL);
-			wait(NULL);
-		}
-	}
- }
-	
-// Help command builtin
-void openHelp()
-{
-	puts("\n***WELCOME TO MY SHELL HELP***"
-		"\nCopyright @ Suprotik Dey"
-		"\n-Use the shell at your own risk..."
-		"\nList of Commands supported:"
-		"\n>cd"
-		"\n>ls"
-		"\n>exit"
-		"\n>all other general commands available in UNIX shell"
-		"\n>pipe handling"
-		"\n>improper space handling");
-
-	return;
-}
-
-// Function to execute builtin commands
+// This function will execute custom functions
 int ownCmdHandler(char** parsed, int childStatus)
 {
 	int NoOfOwnCmds = 3, i, switchOwnArg = 0;
 	char* ListOfOwnCmds[NoOfOwnCmds];
 	char* homeDir;
 	char* newDir;
-	// int childStatus = 0;
 
 	ListOfOwnCmds[0] = "exit";
 	ListOfOwnCmds[1] = "cd";
 	ListOfOwnCmds[2] = "#";
 
 
-  //compares the first element of the parsed string (if parsed is "ls -la" then parsed[0] is only ls)
+  	//compares the first element of the parsed string (if parsed is "ls -la" then parsed[0] is only ls)
 	for (i = 0; i < NoOfOwnCmds; i++) {
 		if (strcmp(parsed[0], ListOfOwnCmds[i]) == 0) {
 			switchOwnArg = i + 1; //if it matches it will be 1, 2, or 3
@@ -308,7 +220,7 @@ int ownCmdHandler(char** parsed, int childStatus)
 	return 0;
 }
 
-// function for finding background command
+// This function is for finding background ("&") argument -- to be implemented.
 int findBackground(char* str, char** strpiped)
 {
 	char *i;
@@ -316,16 +228,13 @@ int findBackground(char* str, char** strpiped)
 	i = strstr(str, "&");
 	if (i != NULL)
 	{
-	 //	printf("found &");
-		return 1;
+		return 1; // & found
 	}
 	else 
-	//	printf("no &");
-		return 0;
-	
-	
+		return 0; // no & found
 }
-// function for finding pipe
+
+// This function finds a redirect symbol.
 int parsePipe(char* str, char** strpiped)
 {
 	int i;
@@ -341,11 +250,12 @@ int parsePipe(char* str, char** strpiped)
 		return 1;
 	}
 }
-// function for parsing command words
+
+// This function parses command arguments from the input string and adds them
+// to an array called parsed.
 int parseSpace(char* str, char** parsed, int childStatus)
 {
 	int i;
-
 
 	for (i = 0; i < MAXLIST; i++) {
 		parsed[i] = strsep(&str, " ");
@@ -374,7 +284,6 @@ int processString(char* str, char** parsed, char** parsedpipe, int childStatus)
 
 	if (background)
 	{
-		printf("background char found\n");
 		parseSpace(strpiped[0], parsed, childStatus);
 	}
 
@@ -389,8 +298,6 @@ int processString(char* str, char** parsed, char** parsedpipe, int childStatus)
 //# TODO look into why ownCmdHandler called in processString and parseSpace
 	if (ownCmdHandler(parsed, childStatus))
 		return 0;
-
-
 	else
 		return 1 + piped;
 }
