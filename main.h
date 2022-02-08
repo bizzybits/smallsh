@@ -73,7 +73,7 @@ void printPrompt()
 //Function to print last call status
 void printStatus(int childStatus)
 {
-	printf("exit valud %d\n", childStatus);
+	printf("exit value %d\n", childStatus);
 }
 
 // Function where the system command is executed
@@ -81,12 +81,12 @@ int execArgs(char** parsed)
 {
 	// Forking a child
 	int childStatus;
-	pid_t pid = fork();
+	pid_t childPid = fork();
 
-	if (pid == -1) {
+	if (childPid == -1) {
 		printf("\nFailed forking child..\n");
 		return 1;
-	} else if (pid == 0) {
+	} else if (childPid == 0) {
 		if (execvp(parsed[0], parsed) < 0) {
 			perror(parsed[0]);
 			childStatus = 1;
@@ -95,8 +95,9 @@ int execArgs(char** parsed)
 		exit(0);
 	} else {
 		// waiting for child to terminate
-	//	printf("Child's pid = %d\n", pid);
-		pid = waitpid(pid, &childStatus, 0);
+		int is_background = 0; //true
+		printf("Child's pid = %d\n", childPid);
+		childPid = waitpid(childPid, &childStatus, 0);
 	//	printf("waitpid returned value %d\n", pid);
 		if (WIFEXITED(childStatus))
 		{
@@ -136,6 +137,7 @@ void runcmd(int fd, char ** parsedpipe){
 
 	switch (fork()){
 		case 0: //child
+			pid_t childPid = getpid();
 			dup2(fd, 1); //fd becomes stdout
 			execvp(parsedpipe[0], parsedpipe);
 			err_syserr("cannot open %s for input", parsedpipe[0]);
@@ -200,69 +202,6 @@ void execArgsPiped(char** parsed, char** parsedpipe)
 }
 
 
-
-void g4g(char ** parsedpipe, char ** parsed){
-	// 0 is read end, 1 is write end
-	int pipefd[2];
-	pid_t p1, p2;
-
-
-	p1 = fork();
-
-	if (p1 < 0){
-		printf("could not fork p1");
-	}
-
-	if (p1 == 0){
-		close(pipefd[0]);
-		dup2(pipefd[1], STDOUT_FILENO);
-		close(pipefd[1]);
-		if (execvp(parsed[0], parsed) < 0) {
-			printf("\nCould not execute command 1..");
-			exit(0);
-		}
-	} else {
-		// Parent executing
-		p2 = fork();
-		if (p2 < 0) {
-			printf("\nCould not fork");
-			return;
-		}
-		// Child 2 executing..
-		// It only needs to read at the read end
-		if (p2 == 0) {
-			close(pipefd[1]);
-			dup2(pipefd[0], STDIN_FILENO);
-			close(pipefd[0]);
-			if (execvp(parsed[0], parsedpipe) < 0) {
-				printf("\nCould not execute command 2..");
-				exit(0);
-			}
-		} else {
-			// parent executing, waiting for two children
-			wait(NULL);
-			wait(NULL);
-		}
-	}
- }
-	
-// Help command builtin
-void openHelp()
-{
-	puts("\n***WELCOME TO MY SHELL HELP***"
-		"\nCopyright @ Suprotik Dey"
-		"\n-Use the shell at your own risk..."
-		"\nList of Commands supported:"
-		"\n>cd"
-		"\n>ls"
-		"\n>exit"
-		"\n>all other general commands available in UNIX shell"
-		"\n>pipe handling"
-		"\n>improper space handling");
-
-	return;
-}
-
 // Function to execute builtin commands
 int ownCmdHandler(char** parsed, int childStatus)
 {
@@ -314,7 +253,7 @@ int ownCmdHandler(char** parsed, int childStatus)
 }
 
 // function for finding background command
-int findBackground(char* str, char** strpiped)
+int findBackground(char* str, char** strpiped, int childPid)
 {
 	char *i;
 

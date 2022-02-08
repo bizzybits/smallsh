@@ -70,6 +70,7 @@ int main()
 	int i;
 	int comp;
 	int childStatus;
+	int childPid;
 
 	
 	struct sigaction SIGINT_action = {0}, SIGTSTP_action = {0};
@@ -90,9 +91,9 @@ int main()
 	// sigaction(SIGHUP, &ignore_action.sa_mask);
 	// sigaction(SIGQUIT, &ignore_action.sa_mask);
 
-	pid_t pid = getpid();
+	pid_t parentPid = getpid();
 	
-	printf("this process pid is %d\n", pid);
+	printf("this process pid is %d\n", parentPid);
 	// fflush(stdout);
 	// pause();
 
