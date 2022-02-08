@@ -14,51 +14,9 @@
 
 // Clearing the shell using escape sequences
 #define clear() printf("\033[H\033[J")
-
 int BACKGROUND_ALLOWED = 0;
 pid_t spawnpid = -5;
-
-void  handle_SIGTSTP(int signo) 
-{
-  int during_process = 1;
-  char message[100];
-  char *background = "Exiting foreground-only mode!\n";
-  char *foreground = "Entering foreground-only mode (& is now ignored)\n"; 
-
-  memset(message, '\0', sizeof(strlen(message)));
-
-   /* keeps the signal handler waiting until child process dies,
-     * creates a flag that signals that we need to fake a prompt */
-    while (waitpid(spawnpid, NULL, WNOHANG) == 0) {
-        during_process = 0;
-    };
-
-    if (BACKGROUND_ALLOWED && during_process) {
-        strcpy(message, foreground);
-        BACKGROUND_ALLOWED = 1;
-    } else if (BACKGROUND_ALLOWED && !during_process) {
-
-        /* if not during a process, we are adding a new line
-         * so add the look of a prompt after */
-        strcpy(message, foreground);
-        strcat(message, ": ");
-        BACKGROUND_ALLOWED = 1;
-    } else if (!BACKGROUND_ALLOWED && during_process) {
-        strcpy(message, background);
-        BACKGROUND_ALLOWED = 0;
-    } else {
-        strcpy(message, background);
-        strcat(message, ": ");
-        BACKGROUND_ALLOWED = 0;
-    }
-
-    /* print our message to the screen */
-    fflush(stdout);
-    write(STDOUT_FILENO, message, strlen(message));
-
-}
   
-
 int main()
 {
 	char inputString[MAXCOM], *parsedArgs[MAXLIST];
@@ -71,6 +29,9 @@ int main()
 	int comp;
 	int childStatus;
 	int childPid;
+	int bgFlag;
+	int fd;
+
 
 	
 	struct sigaction SIGINT_action = {0}, SIGTSTP_action = {0};
@@ -114,7 +75,7 @@ int main()
 
     
     execFlag = processString(inputString,
-		parsedArgs, parsedArgsPiped, childStatus);
+		parsedArgs, parsedArgsPiped, childStatus, bgFlag);
     
 	
 		// execflag returns zero if there is no command
@@ -133,11 +94,11 @@ int main()
 	
 		if (execFlag == 1){
 			
-			childStatus = execArgs(parsedArgs);
+			childStatus = execArgs(fd, parsedArgs, parsedArgsPiped, bgFlag);
 		
 		}
 		if (execFlag == 2)
-			execArgsPiped(parsedArgs, parsedArgsPiped);
+			execArgsPiped(parsedArgs, parsedArgsPiped, bgFlag);
     
     
 	}
