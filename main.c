@@ -43,54 +43,50 @@ int main()
 	//char* parsedArgsPiped[MAXARGS];
 	int execFlag = 0;
   	int ret;
-  	char *empty = {"\r"};
   	int i;
-  	int comp;
   	int childStatus;
 	int bgFlag;
+	int bgToggle = 0;
+	int sigintFlag = 0;
+	int sigtstpFlag = 0;
 
 	while (1) {
-		signal(SIGINT, handle_sigint);
+	
 		// print shell line
 		printPrompt();
 		// take input
 		takeInput(inputString);
     	// check if inputString is NULL (if so continue)
-		if (strlen(inputString) == 0){
+		if (strlen(inputString) == 0)
+		{
 			continue;
 		}
 
 		int pid = getpid();
-		printf("pid of main process is %d\n", pid);
-    	size_t s = strlen(inputString);
-	 	execFlag = processString(inputString,
-			parsedArgs, childStatus);
+		printf("pid of main loop is %d\n", pid);
+		fflush(stdout);
 
-		// execute the arguments that are parsed from inputString
-		// execFlag will:
-		//		+ return 0 if there is no command
-		//		+ return 1 if there is a single command
-		//		+ return 2 if there is a redirect 
+    	size_t s = strlen(inputString);
+	 	execFlag = processString(inputString, parsedArgs, childStatus);
+
 
 		int num;
 		num = strcmp(inputString, "status");
+		
 		if (num == 0)
 		{
 			printf("exit status %d\n", childStatus);
 			continue;
 		}
-	
-		//if (execFlag == 1){
-			
-			childStatus = execArgs(parsedArgs, bgFlag);
-			printf("good bye");
-		
-		//}
-		// if (execFlag == 2)
-		// 	execArgsPiped(parsedArgs, parsedArgsPiped);
-    
-    
+
+		if (execFlag == 1)
+		{
+		childStatus = execArgs(parsedArgs, bgFlag, sigintFlag, sigtstpFlag);
+		}
+		else 
+			printf("bye");
 	}
 	return 0;
-}
 
+
+}
