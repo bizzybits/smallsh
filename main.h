@@ -254,21 +254,31 @@ int parsePipe(char* str, char** strpiped)
 // to an array called parsed.
 int parseSpace(char* str, char** parsed, int childStatus)
 {
+	int parseSpace(char* str, char** parsedArgs, int childStatus)
+{
 	int i;
 
-	for (i = 0; i < MAXARGS; i++) {
-		parsed[i] = strsep(&str, " ");
+
+	for (i = 0; i < MAXLIST; i++) {
+		parsedArgs[i] = strsep(&str, " ");
 
 		
-		if (parsed[i] == NULL)
+		if (parsedArgs[i] == NULL)
 			break;
-		if (strlen(parsed[i]) == 0)
+		if (strstr(parsedArgs[i],"$$") != NULL)
+		{
+			parsedArgs[i] = strsep(&parsedArgs[i], "$$");
+			sprintf(parsedArgs[i], "%d", getpid());
+		}
+		if (strlen(parsedArgs[i]) == 0)
 			i--;
 	}
-  if (ownCmdHandler(parsed, childStatus))
+  if (ownCmdHandler(parsedArgs, childStatus))
 		return 0;
 	else
 		return 1;
+}
+
 }
 
 int processString(char* str, char** parsed, char** parsedpipe, int childStatus)
