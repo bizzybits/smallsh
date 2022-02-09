@@ -40,13 +40,14 @@ https://www.geeksforgeeks.org/c-program-not-suspend-ctrlz-pressed/ signal handle
 int main()
 {
 	char inputString[MAXCHARS], *parsedArgs[MAXARGS];
-	char* parsedArgsPiped[MAXARGS];
+	//char* parsedArgsPiped[MAXARGS];
 	int execFlag = 0;
   	int ret;
   	char *empty = {"\r"};
   	int i;
   	int comp;
   	int childStatus;
+	int bgFlag;
 
 	while (1) {
 		signal(SIGINT, handle_sigint);
@@ -58,10 +59,12 @@ int main()
 		if (strlen(inputString) == 0){
 			continue;
 		}
-   
+
+		int pid = getpid();
+		printf("pid of main process is %d\n", pid);
     	size_t s = strlen(inputString);
 	 	execFlag = processString(inputString,
-			parsedArgs, parsedArgsPiped, childStatus);
+			parsedArgs, childStatus);
 
 		// execute the arguments that are parsed from inputString
 		// execFlag will:
@@ -77,15 +80,17 @@ int main()
 			continue;
 		}
 	
-		if (execFlag == 1){
+		//if (execFlag == 1){
 			
-			childStatus = execArgs(parsedArgs);
+			childStatus = execArgs(parsedArgs, bgFlag);
+			printf("good bye");
 		
-		}
-		if (execFlag == 2)
-			execArgsPiped(parsedArgs, parsedArgsPiped);
+		//}
+		// if (execFlag == 2)
+		// 	execArgsPiped(parsedArgs, parsedArgsPiped);
     
     
 	}
 	return 0;
 }
+

@@ -19,12 +19,24 @@
 #define MAXCHARS 2048 // max number of letters to be supported
 #define MAXARGS 512 // max number of commands to be supported
 
+int bgToggle;
+int sigtstpFlag;
+int sigintFlag;
 
-void handle_sigint(int signo)
-{
-    char* message = "terminated by signal 2\n";
-	write(STDOUT_FILENO, message, 25);
-	sleep(3);
+
+void handle_SIGTSTP(int signo){
+	if (bgToggle == 0){
+		char* message = "\nEntering foreground-only mode (& is now ignored)\n";
+		bgToggle = 1;
+		write(STDOUT_FILENO, message, 50);
+	}
+	else{
+		char* message = "\nExiting foreground-only mode\n";
+		bgToggle = 0;
+		write(STDOUT_FILENO, message, 30);
+	}
+	sigtstpFlag = 1;
+	fflush(stdout);
 }
 
 // To implement: 
@@ -63,118 +75,196 @@ void printPrompt()
 // Function to print last process's exit status.
 void printStatus(int childStatus)
 {
-	printf("exit valud %d\n", childStatus);
+	printf("exit value %d\n", childStatus);
 }
 
 // Function where the system command is executed
-int execArgs(char** parsed)
+int execArgs(char** parsed, int bgFlag)
 {
-	// Forking a child
-	int childStatus;
-	pid_t pid = fork();
-
-	if (pid == -1) {
-		printf("\nFailed forking child..\n");
-		return 1;
-	} else if (pid == 0) {
-		if (execvp(parsed[0], parsed) < 0) {
-			perror(parsed[0]);
-			childStatus = 1;
-		}
-		return childStatus;
-		exit(0);
-	} else {
-		// waiting for child to terminate
-		pid = waitpid(pid, &childStatus, 0);
-		if (WIFEXITED(childStatus))
-		{
-			if (childStatus == 0) //Child exited normally with status 0
-			{
-				return childStatus;
-			}
-			else 
-				childStatus = 1; //Child exited normally with status other than 0
-				return childStatus;
-		}
-		else 
-		{
-			return childStatus; //Child exited abnormally due to signal
-		}
-		wait(NULL);
-	}
-}
-
-void err_syserr(const char *fmt, char * parsedpipe)
-{
-    int errnum = errno;
-    if (errnum != 0)
-        fprintf(stderr, "%d: %s\n", errnum, strerror(errnum));
-    putc('\n', stderr);
-    exit(EXIT_FAILURE);
-}
-
-void runcmd(int fd, char ** parsedpipe)
-{
+	
+	int redirect;
+	int fd;
+	int i;
+	struct sigaction SIGINT_action = {0}, SIGTSTP_action = {0};
+	pid_t pid;
 	int saved_stdout;
 	saved_stdout = dup(STDOUT_FILENO);
 	int status;
+	int childStatus;
 
-	switch (fork())
-	{
-		case 0: //child
-			dup2(fd, 1); //fd becomes stdout
-			execvp(parsedpipe[0], parsedpipe);
-			err_syserr("cannot open %s for input", parsedpipe[0]);
+	//ignore sigint signals
+	SIGINT_action.sa_handler = SIG_IGN;
+	sigfillset(&SIGINT_action.sa_mask);
+	SIGINT_action.sa_flags = 0;
+	sigaction(SIGINT, &SIGINT_action, NULL);
+
+	//custom SIGTSTP handler
+	SIGTSTP_action.sa_handler = handle_SIGTSTP;
+	sigfillset(&SIGTSTP_action.sa_mask);
+	SIGTSTP_action.sa_flags = 0;
+  	sigaction(SIGTSTP, &SIGTSTP_action, NULL);
+
+	pid = getpid();
+
+
+	// Forking a child
+
+	pid = fork();
+	switch(pid){
+
+	case -1:
+		printf("\nFailed forking child..\n");
+		return 1;
+	case 0:
+		if (bgFlag == 0){
+			SIGINT_action.sa_handler = SIGDFL;
+			sigation(SIGINT, &SIGINT_action, NULL);
+		}
+		for (i = 1; i < strlen(*parsed); i++){
+			if (bgFlag == 1) {	
+				redirect = 1;
+				fd = open("/dev/null", O_RDONLY);
+				int result = dup2(fd, STDIN_FILENO);
+				if (result == -1) { 
+					perror("source open()"); 
+					exit(1); 
+				}
+			}
+			// input file direction
+			if ((strcmp(parsed[i], "<") == 0)) {
+				redirect = 1;
+				
+				fd = open(parsed[i + 1], O_RDONLY);
+				int result = dup2(fd, STDIN_FILENO);
+				if (result == -1) { 
+					perror("source open()"); 
+					exit(1); 
+				}
+			}
+			// output file direction
+			if ((strcmp(parsed[i], ">") == 0))  {
+				redirect = 1;
+				fd = open(parsed[i + 1], O_CREAT | O_RDWR | O_TRUNC, 0640);
+				int result = dup2(fd, STDOUT_FILENO); //should have made a function for all this repeated code 
+				if (result == -1){
+					perror("source open()"); 
+					exit(1); 
+				}
+			}
+		}
+		//truncate arguments in preperation for exec and close FD
+		if (redirect == 1){
+			close(fd);
+			for(i = 1; i < strlen(*parsed); i++)
+				i--;
+		}
+
+		//pass trunceted arguments to execvp
+		if (execvp(parsed[0], parsed) && sigtstpFlag != 1 && sigintFlag != 1){
+			fprintf(stderr, "Cannot execute %s\n", parsed[0]);
 			fflush(stdout);
-			break;
+			exit(1);
+		}
+		break;
 
-		default: //parent
-			while (wait(&status) != -1); //picks up dead children
-			break;
-
-		case -1:
-			perror("fork");
-	}
-	return;
+	default:
+		if (bgFlag == 1){
+			printf("background pid is %d\n", pid);
+			fflush(stdout);
+		}
+		else { 
+			//wait for child to terminate
+			waitpid(pid, &status, 0);
+			if(sigtstpFlag != 1){
+				//check that child is dead
+				if (WIFSIGNALED(status) == 1 && WTERMSIG(status) != 0){
+					printf("terminated by signal %d\n", WTERMSIG(status));
+					fflush(stdout);
+				}
+				while (pid != -1){
+					//re-fetch pid
+					pid = waitpid(-1, &status, WNOHANG);	
+					//print after results killed
+					if (WIFEXITED(status) != 0 && pid > 0){
+						printf("background pid %d is done: exit value %d\n", pid, WEXITSTATUS(status));
+						fflush(stdout);
+					}
+					else if (WIFSIGNALED(status) != 0 && pid > 0 ){
+						printf("background pid %d is done: terminated by signal %d\n", pid, WTERMSIG(status));
+						fflush(stdout);
+					}
+				}
+			}
+		}
+		break;
+	//waiting for child to terminate
+	// 	if (WIFEXITED(childStatus))
+	// 	{
+	// 		if (childStatus == 0) //Child exited normally with status 0
+	// 		{
+	// 			return childStatus;
+	// 		}
+	// 		else 
+	// 			childStatus = 1; //Child exited normally with status other than 0
+	// 			return childStatus;
+	// 	}
+	// 	else 
+	// 	{
+	// 		return childStatus; //Child exited abnormally due to signal
+	// 	}
+	// 	wait(NULL);
+	// }
+	
 }
+
+// void err_syserr(const char *fmt, char * parsedpipe)
+// {
+//     int errnum = errno;
+//     if (errnum != 0)
+//         fprintf(stderr, "%d: %s\n", errnum, strerror(errnum));
+//     putc('\n', stderr);
+//     exit(EXIT_FAILURE);
+// }
+
+
 // Function where the piped system commands is executed
-void execArgsPiped(char** parsed, char** parsedpipe)
-{
+// void execArgsPiped(char** parsed, char** parsedpipe)
+// {
 
-  	int args = strlen(*parsed);
+//   	int args = strlen(*parsed);
 
-	int saved_stdout;
+// 	int saved_stdout;
 
-	if (args != 2){
-		printf("Usage: ./main <filename to redirect stdout to>\n");
-		exit(1);
-	}
+// 	if (args != 2){
+// 		printf("Usage: ./main <filename to redirect stdout to>\n");
+// 		exit(1);
+// 	}
 
-	int targetFD = open(parsedpipe[0], O_WRONLY | O_CREAT , 0640);
+// 	int targetFD = open(parsedpipe[0], O_WRONLY | O_CREAT , 0640);
 	
-	if (targetFD == -1) {
-		perror("open()");
-		exit(1);
-	}
+// 	if (targetFD == -1) {
+// 		perror("open()");
+// 		exit(1);
+// 	}
 	
-	// Currently printf writes to the terminal
-	// Use dup2 to point FD 1, i.e., standard output to targetFD
-	saved_stdout = dup(STDOUT_FILENO);
-	int result = dup2(targetFD, 1);
-	if (result == -1) {
-		perror("dup2"); 
-		exit(2); 
-	}
-	// Now whatever we write to standard out will be written to targetFD
+// 	// Currently printf writes to the terminal
+// 	// Use dup2 to point FD 1, i.e., standard output to targetFD
+// 	saved_stdout = dup(STDOUT_FILENO);
+// 	int result = dup2(targetFD, 1);
+// 	if (result == -1) {
+// 		perror("dup2"); 
+// 		exit(2); 
+// 	}
+// 	// Now whatever we write to standard out will be written to targetFD
 	
-	runcmd(targetFD, parsed);
-	close(targetFD);
-	fflush(stdout);
-	dup2(saved_stdout, STDOUT_FILENO);
-	close(saved_stdout);
-	return;
+// 	runcmd(targetFD, parsed);
+// 	close(targetFD);
+// 	fflush(stdout);
+// 	dup2(saved_stdout, STDOUT_FILENO);
+// 	close(saved_stdout);
+// 	return;
 	
-}
+// }
 
 // This function will execute custom functions
 int ownCmdHandler(char** parsed, int childStatus)
@@ -237,30 +327,41 @@ int findBackground(char* str, char** strpiped)
 		return 0; // no & found
 }
 
-// This function finds a redirect symbol.
-int parsePipe(char* str, char** strpiped)
-{
-	int i;
-	for (i = 0; i < 2; i++) {
-		strpiped[i] = strsep(&str, ">");
-		if (strpiped[i] == NULL)
-			break;
-	}
+// // This function finds a redirect symbol.
+// int parsePipe(char* str, char** strpiped)
+// {
+// 	int i;
+// 	for (i = 0; i < 2; i++) {
+// 		strpiped[i] = strsep(&str, ">");
+// 		if (strpiped[i] == NULL)
+// 			break;
+// 	}
 
-	if (strpiped[1] == NULL)
-		return 0; // returns zero if no pipe is found.
-	else {
-		return 1;
-	}
-}
+// 	char * temp = strdup(parsed[i]);
+// 		strcpy(temp, " ");
+// 		sprintf(parsed[i], temp, getpid());
+// 		free(temp);
+
+// 	if (strcmp(parsed[i], ">")
+// 	{
+// 		i--;
+// 	}
+
+// 	if (strpiped[1] == NULL)
+// 		return 0; // returns zero if no pipe is found.
+// 	else {
+// 		return 1;
+// 	}
+// }
 
 // This function parses command arguments from the input string and adds them
 // to an array called parsed.
 int parseSpace(char* str, char** parsed, int childStatus)
 {
-
+	int bgFlag = 0;
+	int bgToggle;
 	int i;
-	
+
 	for (i = 0; i < MAXCHARS; i++) {
 		parsed[i] = strsep(&str, " ");
 
@@ -275,8 +376,16 @@ int parseSpace(char* str, char** parsed, int childStatus)
 			sprintf(parsed[i], temp, getpid());
 			free(temp);
 		}
-		if (strlen(parsed[i]) == 0)
+
+	
+		if (strcmp(parsed[i], "&") == 0) {
 			i--;
+			bgFlag = 1;
+			return 1;
+			}
+
+		if (strlen(parsed[i]) == 0)
+		i--;		
 	}
   if (ownCmdHandler(parsed, childStatus))
 		return 0;
@@ -285,29 +394,29 @@ int parseSpace(char* str, char** parsed, int childStatus)
 
 }
 
-int processString(char* str, char** parsed, char** parsedpipe, int childStatus)
+int processString(char* str, char** parsed, int childStatus)
 {
 
 	char* strpiped[2];
 	int piped = 0;
 	int background = 0;
 
-	piped = parsePipe(str, strpiped);
-	background = findBackground(str, strpiped);
+	//piped = parsePipe(str, strpiped);
+//	background = findBackground(str, strpiped);
 
-	if (background)
-	{
-		parseSpace(strpiped[0], parsed, childStatus);
-	}
+	// if (background)
+	// {
+	// 	parseSpace(strpiped[0], parsed, childStatus);
+	// }
 
-	if (piped) 
-	{
-		parseSpace(strpiped[0], parsed, childStatus);
-		parseSpace(strpiped[1], parsedpipe, childStatus);
+	// if (piped) 
+	// {
+	// 	parseSpace(strpiped[0], parsed, childStatus);
+	// 	parseSpace(strpiped[1], parsedpipe, childStatus);
 
-	}else {
+	// }else {
 		parseSpace(str, parsed, childStatus);
-	}
+//	}
 //# TODO look into why ownCmdHandler called in processString and parseSpace
 	if (ownCmdHandler(parsed, childStatus))
 		return 0;
