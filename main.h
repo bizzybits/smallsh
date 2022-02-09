@@ -260,8 +260,7 @@ int parseSpace(char* str, char** parsed, int childStatus)
 {
 
 	int i;
-
-
+	
 	for (i = 0; i < MAXCHARS; i++) {
 		parsed[i] = strsep(&str, " ");
 
@@ -283,7 +282,6 @@ int parseSpace(char* str, char** parsed, int childStatus)
 		return 0;
 	else
 		return 1;
-
 
 }
 
