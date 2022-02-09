@@ -16,6 +16,10 @@
 #define FILE_MAX_SIZE 40
 #define MAXFILE 81
 
+#define MAXCHARS 2048 // max number of letters to be supported
+#define MAXARGS 512 // max number of commands to be supported
+
+
 void handle_sigint(int signo)
 {
     char* message = "terminated by signal 2\n";
@@ -254,30 +258,32 @@ int parsePipe(char* str, char** strpiped)
 // to an array called parsed.
 int parseSpace(char* str, char** parsed, int childStatus)
 {
-	int parseSpace(char* str, char** parsedArgs, int childStatus)
-{
+
 	int i;
 
 
-	for (i = 0; i < MAXLIST; i++) {
-		parsedArgs[i] = strsep(&str, " ");
+	for (i = 0; i < MAXCHARS; i++) {
+		parsed[i] = strsep(&str, " ");
 
 		
-		if (parsedArgs[i] == NULL)
+		if (parsed[i] == NULL)
 			break;
-		if (strstr(parsedArgs[i],"$$") != NULL)
+		if (strstr(parsed[i],"$$") != NULL)
 		{
-			parsedArgs[i] = strsep(&parsedArgs[i], "$$");
-			sprintf(parsedArgs[i], "%d", getpid());
+			
+			char * temp = strdup(parsed[i]);
+			strcpy(temp, "%d");
+			sprintf(parsed[i], temp, getpid());
+			free(temp);
 		}
-		if (strlen(parsedArgs[i]) == 0)
+		if (strlen(parsed[i]) == 0)
 			i--;
 	}
-  if (ownCmdHandler(parsedArgs, childStatus))
+  if (ownCmdHandler(parsed, childStatus))
 		return 0;
 	else
 		return 1;
-}
+
 
 }
 
