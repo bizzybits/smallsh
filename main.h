@@ -9,12 +9,6 @@
 #include <stdarg.h>
 #include <signal.h>
 
-#define MAXCHARS 2048 // max number of letters to be supported
-#define MAXARGS 512 // max number of commands to be supported
-#define MAX_VAR_NUM 10
-#define PIPE_MAX_NUM 10
-#define FILE_MAX_SIZE 40
-#define MAXFILE 81
 
 #define MAXCHARS 2048 // max number of letters to be supported
 #define MAXARGS 512 // max number of commands to be supported
@@ -63,7 +57,8 @@ void printPrompt()
 // Function to print last process's exit status.
 void printStatus(int childStatus)
 {
-	printf("exit valud %d\n", childStatus);
+	printf("exit value %d\n", childStatus);
+	fflush(stdout);
 }
 
 // Function where the system command is executed
@@ -104,6 +99,8 @@ int execArgs(char** parsed)
 	}
 }
 
+// This function sends custom error message other than system errors
+
 void err_syserr(const char *fmt, char * parsedpipe)
 {
     int errnum = errno;
@@ -112,6 +109,8 @@ void err_syserr(const char *fmt, char * parsedpipe)
     putc('\n', stderr);
     exit(EXIT_FAILURE);
 }
+
+// This function executes the foreground commands
 
 void runcmd(int fd, char ** parsedpipe)
 {
@@ -137,7 +136,9 @@ void runcmd(int fd, char ** parsedpipe)
 	}
 	return;
 }
-// Function where the piped system commands is executed
+
+// This function handles the redirect commands and executes them.
+
 void execArgsPiped(char** parsed, char** parsedpipe)
 {
 
@@ -176,23 +177,22 @@ void execArgsPiped(char** parsed, char** parsedpipe)
 	
 }
 
-// This function will execute custom functions
+// This function is for handling the "cd" and "exit" commands from the program requirements.
 int ownCmdHandler(char** parsed, int childStatus)
 {
-	int NoOfOwnCmds = 3, i, switchOwnArg = 0;
+	int NoOfOwnCmds = 2, i, switchOwnArg = 0;
 	char* ListOfOwnCmds[NoOfOwnCmds];
 	char* homeDir;
 	char* newDir;
 
 	ListOfOwnCmds[0] = "exit";
 	ListOfOwnCmds[1] = "cd";
-	ListOfOwnCmds[2] = "#";
 
 
   	//compares the first element of the parsed string (if parsed is "ls -la" then parsed[0] is only ls)
 	for (i = 0; i < NoOfOwnCmds; i++) {
 		if (strcmp(parsed[0], ListOfOwnCmds[i]) == 0) {
-			switchOwnArg = i + 1; //if it matches it will be 1, 2, or 3
+			switchOwnArg = i + 1; //if it matches it will be 1 or 2
 			break;
 		}
 	}
@@ -213,9 +213,7 @@ int ownCmdHandler(char** parsed, int childStatus)
 		  	newDir = parsed[1];
 		  	chdir(newDir);
 			return 1;
-	case 3:
-		printf("\r");
-		return 1;
+
 	default:
 		break;
 	}
@@ -264,17 +262,28 @@ int parseSpace(char* str, char** parsed, int childStatus)
 	for (i = 0; i < MAXCHARS; i++) {
 		parsed[i] = strsep(&str, " ");
 
-		
 		if (parsed[i] == NULL)
 			break;
-		if (strstr(parsed[i],"$$") != NULL)
+
+		if (strstr(parsed[i], "$$") != NULL)
 		{
-			
-			char * temp = strdup(parsed[i]);
-			strcpy(temp, "%d");
-			sprintf(parsed[i], temp, getpid());
-			free(temp);
+			const char s[4] = "$$";
+			char temp[MAXCHARS] = "";
+			char *token;
+			int process_id = getpid();
+			char pid[21];
+			sprintf(pid, "%d", process_id);
+
+			token = strtok(parsed[i], s);
+			while (token != NULL)
+			{
+				strcat(temp, token);
+				strcat(temp, pid);
+				token = strtok(NULL, s);
+			}
+			parsed[i] = temp;
 		}
+
 		if (strlen(parsed[i]) == 0)
 			i--;
 	}
@@ -285,6 +294,9 @@ int parseSpace(char* str, char** parsed, int childStatus)
 
 }
 
+// This function takes the string and sends the parsed arguments to the other
+// functions for more processing: parseSpace and over to the built in command
+// function.
 int processString(char* str, char** parsed, char** parsedpipe, int childStatus)
 {
 

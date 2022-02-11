@@ -12,7 +12,7 @@
 
 /*
 Citations for the following program:
-Date: 2/7/2022
+Date: 2/10/2022
 
 Several sections of main.c and main.h written for this program are based on 
 and/or adapted in part from the example programs and concepts in our class Explorations 
@@ -43,9 +43,7 @@ int main()
 	char* parsedArgsPiped[MAXARGS];
 	int execFlag = 0;
   	int ret;
-  	char *empty = {"\r"};
   	int i;
-  	int comp;
   	int childStatus;
 
 	while (1) {
@@ -59,7 +57,12 @@ int main()
 			continue;
 		}
    
-    	size_t s = strlen(inputString);
+		//check to see if inputString is a comment
+		if (strncmp(inputString, "#", 1) == 0)
+		{
+			continue;
+		}
+    	
 	 	execFlag = processString(inputString,
 			parsedArgs, parsedArgsPiped, childStatus);
 
@@ -70,22 +73,25 @@ int main()
 		//		+ return 2 if there is a redirect 
 
 		int num;
-		num = strcmp(inputString, "status");
+		num = strncmp(inputString, "status", 6);
 		if (num == 0)
 		{
 			printf("exit status %d\n", childStatus);
+			fflush(stdout);
 			continue;
 		}
 	
 		if (execFlag == 1){
 			
 			childStatus = execArgs(parsedArgs);
-		
+			fflush(stdout);
 		}
 		if (execFlag == 2)
 			execArgsPiped(parsedArgs, parsedArgsPiped);
+			fflush(stdout);
     
     
 	}
+	fflush(stdout);	
 	return 0;
 }
